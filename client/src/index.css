@@ -1,0 +1,57 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-white/10;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink text-white antialiased;
+    font-family: "Space Grotesk", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Sora", sans-serif;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-[2rem] border border-white/10 bg-white/5 shadow-glow backdrop-blur-xl;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-100;
+  }
+
+  .button-primary {
+    @apply inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-gradient-to-r from-cyan-300/90 to-fuchsia-400/85 px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02] hover:shadow-pink;
+  }
+
+  .button-secondary {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 font-semibold text-white transition hover:bg-white/10;
+  }
+
+  .field-label {
+    @apply text-sm font-medium uppercase tracking-[0.22em] text-white/60;
+  }
+
+  .field-input {
+    @apply w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition placeholder:text-white/30 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/20;
+  }
+
+  .stat-card {
+    @apply glass-panel p-5;
+  }
+}
