@@ -4,7 +4,8 @@ dotenv.config();
 
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
-  port: Number(process.env.SERVER_PORT || 5000),
+  port: Number(process.env.PORT || process.env.SERVER_PORT || 5000),
+  host: process.env.HOST || "0.0.0.0",
   clientOrigin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
   clientPublicUrl: process.env.CLIENT_PUBLIC_URL || "http://localhost:5173",
   serverPublicUrl: process.env.SERVER_PUBLIC_URL || "http://localhost:5000",

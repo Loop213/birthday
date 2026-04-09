@@ -25,8 +25,10 @@ async function bootstrap() {
   await ensureAdminUser();
   startWishScheduler();
 
-  app.listen(env.port, () => {
-    console.log(`Server listening on http://localhost:${env.port}`);
+  app.listen(env.port, env.host, () => {
+    console.log(
+      `Server listening on ${env.serverPublicUrl} (bound to ${env.host}:${env.port})`
+    );
   });
 }
 

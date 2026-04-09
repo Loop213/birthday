@@ -127,6 +127,7 @@ npm run dev
 
 - `CLIENT_ORIGIN`
 - `CLIENT_PUBLIC_URL`
+- `HOST`
 - `SERVER_PORT`
 - `SERVER_PUBLIC_URL`
 - `MONGODB_URI`
@@ -202,8 +203,8 @@ dist
 
 ### Backend on Render
 
-1. Create a Web Service pointing to the `server` directory.
-2. Add environment variables from `server/.env.example`.
+1. Create a Web Service using the repository root as the Root Directory.
+2. Add the required environment variables in the Render dashboard.
 3. Build command:
 
 ```bash
@@ -221,6 +222,24 @@ npm start
    - Razorpay credentials
    - SMTP credentials
    - Cloudinary credentials
+   - `CLIENT_ORIGIN=https://birthday-client-five.vercel.app`
+   - `CLIENT_PUBLIC_URL=https://birthday-client-five.vercel.app`
+   - `SERVER_PUBLIC_URL=https://<your-render-service>.onrender.com`
+
+If you prefer setting Render Root Directory to `server`, then use:
+
+```bash
+Build Command: npm install
+Start Command: npm start
+```
+
+### Render Port Note
+
+- Render injects `PORT` automatically.
+- The server now supports Render's `PORT` directly.
+- Set `HOST=0.0.0.0`.
+- Do not keep `SERVER_PUBLIC_URL=http://localhost:5051` in production.
+- `SERVER_PUBLIC_URL` must be your live Render backend URL.
 
 ## Important Notes
 
