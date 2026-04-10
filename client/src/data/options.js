@@ -48,8 +48,9 @@ export const themes = [
 export const musicPresets = [
   {
     value: "celebration-dream",
-    label: "Celebration Dream",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    label: "Happy Birthday Instrumental",
+    url: "/assets/audio/default-birthday.wav",
+    isDefault: true
   },
   {
     value: "sky-drift",

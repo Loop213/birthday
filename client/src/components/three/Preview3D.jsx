@@ -1,7 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import confetti from "canvas-confetti";
 import { gsap } from "gsap";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { templateSceneMap } from "./templates/index.jsx";
 import { getBirthdayTemplate } from "../../data/templates.js";
 
@@ -65,7 +65,7 @@ function MobileTemplateFallback({ wish, template }) {
   );
 }
 
-export default function Preview3D({ wish, className = "", mode = "preview" }) {
+export default function Preview3D({ wish, className = "", mode = "preview", replayToken = 0 }) {
   const template = getBirthdayTemplate(wish?.templateId);
   const SceneComponent = templateSceneMap[template.id];
   const overlayRef = useRef(null);
@@ -105,7 +105,9 @@ export default function Preview3D({ wish, className = "", mode = "preview" }) {
   return (
     <div className={`relative h-[420px] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 shadow-glow sm:h-[520px] ${className}`}>
       <Canvas camera={{ position: [0, 1.4, 6], fov: 44 }} shadows dpr={[1, 1.6]}>
-        <SceneComponent wish={wish} onCelebrate={handleCelebrate} />
+        <Suspense fallback={null}>
+          <SceneComponent wish={wish} onCelebrate={handleCelebrate} replayToken={replayToken} />
+        </Suspense>
       </Canvas>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#050816] via-[#050816]/70 to-transparent" />

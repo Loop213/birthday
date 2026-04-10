@@ -54,6 +54,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     data: {
       order,
       payment,
+      keyId: order.provider === "razorpay" ? env.razorpayKeyId : "",
       pricing: {
         baseAmount: BASE_WISH_PRICE,
         ...pricing

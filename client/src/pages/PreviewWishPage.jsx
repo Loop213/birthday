@@ -95,6 +95,7 @@ export default function PreviewWishPage() {
       });
 
       const order = response.data.data.order;
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || response.data.data.keyId;
       setPricing(response.data.data.pricing);
 
       if (order.provider === "demo") {
@@ -114,7 +115,7 @@ export default function PreviewWishPage() {
       }
 
       const razorpay = new window.Razorpay({
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: razorpayKey,
         amount: order.amount,
         currency: order.currency,
         order_id: order.orderId,
@@ -133,6 +134,10 @@ export default function PreviewWishPage() {
           await loadWish();
         }
       });
+
+      if (!razorpayKey) {
+        throw new Error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID on the frontend or configure the backend key.");
+      }
 
       razorpay.open();
     } catch (error) {

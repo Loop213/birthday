@@ -3,6 +3,9 @@ import {
   MessageCircleMore,
   Minimize2,
   Music4,
+  Pause,
+  Play,
+  RotateCcw,
   Volume2,
   VolumeX
 } from "lucide-react";
@@ -22,9 +25,16 @@ export default function WishViewer({
   const [muted, setMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [typedMessage, setTypedMessage] = useState("");
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [volume, setVolume] = useState(0.72);
+  const [replayToken, setReplayToken] = useState(0);
   const template = getBirthdayTemplate(wish?.templateId);
   const presetTrack = musicPresets.find((preset) => preset.value === wish?.music?.preset);
-  const audioSource = wish?.music?.type === "upload" ? wish?.music?.url : presetTrack?.url;
+  const defaultTrack = musicPresets.find((preset) => preset.isDefault) || musicPresets[0];
+  const audioSource =
+    wish?.music?.type === "upload"
+      ? wish?.music?.url
+      : presetTrack?.url || defaultTrack?.url;
   const wishIdentity = wish?._id || wish?.id || wish?.shareSlug || template.id;
   const expiryLabel = wish?.expiresAt
     ? new Intl.DateTimeFormat("en-IN", {
@@ -50,7 +60,7 @@ export default function WishViewer({
     }, 28);
 
     return () => window.clearInterval(timer);
-  }, [wish?.message, wishIdentity]);
+  }, [replayToken, wish?.message, wishIdentity]);
 
   useEffect(() => {
     const handleChange = () => {
@@ -67,11 +77,20 @@ export default function WishViewer({
     }
 
     audioRef.current.muted = muted;
+    audioRef.current.volume = volume;
 
-    if (!muted) {
+    if (isPlaying) {
       audioRef.current.play().catch(() => undefined);
+      return;
     }
-  }, [muted, audioSource]);
+
+    audioRef.current.pause();
+  }, [muted, audioSource, isPlaying, volume]);
+
+  useEffect(() => {
+    setIsPlaying(true);
+    setVolume(0.72);
+  }, [wishIdentity]);
 
   async function toggleFullscreen() {
     if (!containerRef.current) {
@@ -97,6 +116,22 @@ export default function WishViewer({
     window.open(`https://wa.me/?text=${text}`, "_blank");
   }
 
+  function togglePlayback() {
+    setIsPlaying((current) => !current);
+  }
+
+  function replayExperience() {
+    setTypedMessage("");
+    setReplayToken((current) => current + 1);
+
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      if (isPlaying) {
+        audioRef.current.play().catch(() => undefined);
+      }
+    }
+  }
+
   return (
     <div className="space-y-6" ref={containerRef}>
       <div className="glass-panel p-4 sm:p-6">
@@ -119,6 +154,10 @@ export default function WishViewer({
               {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
               {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             </button>
+            <button type="button" onClick={replayExperience} className="button-secondary">
+              <RotateCcw className="h-4 w-4" />
+              Replay
+            </button>
             {allowShare && shareUrl ? (
               <button type="button" onClick={shareOnWhatsapp} className="button-secondary">
                 <MessageCircleMore className="h-4 w-4" />
@@ -128,7 +167,7 @@ export default function WishViewer({
           </div>
         </div>
 
-        <Preview3D wish={wish} mode={mode} />
+        <Preview3D wish={wish} mode={mode} replayToken={replayToken} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
@@ -152,9 +191,40 @@ export default function WishViewer({
             <span>Background soundtrack</span>
           </div>
           {audioSource ? (
-            <audio ref={audioRef} controls autoPlay loop className="mt-4 w-full">
-              <source src={audioSource} />
-            </audio>
+            <>
+              <audio ref={audioRef} autoPlay loop className="hidden">
+                <source src={audioSource} />
+              </audio>
+              <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-sm text-white/60">
+                  {wish?.music?.type === "upload"
+                    ? "Custom uploaded track"
+                    : presetTrack?.label || defaultTrack?.label || "Default birthday instrumental"}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button type="button" onClick={togglePlayback} className="button-secondary">
+                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    {isPlaying ? "Pause" : "Play"}
+                  </button>
+                  <button type="button" onClick={() => setMuted((current) => !current)} className="button-secondary">
+                    {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                    {muted ? "Unmute" : "Mute"}
+                  </button>
+                </div>
+                <label className="mt-4 block space-y-2">
+                  <span className="text-xs uppercase tracking-[0.22em] text-white/45">Volume</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={volume}
+                    onChange={(event) => setVolume(Number(event.target.value))}
+                    className="w-full accent-cyan-300"
+                  />
+                </label>
+              </div>
+            </>
           ) : (
             <p className="mt-4 text-sm text-white/55">No music track attached for this wish.</p>
           )}
