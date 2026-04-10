@@ -124,7 +124,12 @@ function CameraIntro({ replayToken = 0, hovered = false }) {
   return null;
 }
 
-export default function CakeCelebrationScene({ wish, onCelebrate, replayToken = 0 }) {
+export default function CakeCelebrationScene({
+  wish,
+  onCelebrate,
+  replayToken = 0,
+  onPrimaryInteraction
+}) {
   const [candlesLit, setCandlesLit] = useState(true);
   const [hovered, setHovered] = useState(false);
   const [smokeActive, setSmokeActive] = useState(false);
@@ -144,6 +149,7 @@ export default function CakeCelebrationScene({ wish, onCelebrate, replayToken = 
     setSmokeActive(true);
     playCandleBlowSound();
     onCelebrate?.({ type: "cake" });
+    onPrimaryInteraction?.({ type: "cake-blow" });
     window.setTimeout(() => setSmokeActive(false), 2800);
   }
 

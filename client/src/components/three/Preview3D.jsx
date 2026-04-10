@@ -65,7 +65,14 @@ function MobileTemplateFallback({ wish, template }) {
   );
 }
 
-export default function Preview3D({ wish, className = "", mode = "preview", replayToken = 0 }) {
+export default function Preview3D({
+  wish,
+  className = "",
+  mode = "preview",
+  replayToken = 0,
+  showOverlay = true,
+  onPrimaryInteraction
+}) {
   const template = getBirthdayTemplate(wish?.templateId);
   const SceneComponent = templateSceneMap[template.id];
   const overlayRef = useRef(null);
@@ -106,19 +113,26 @@ export default function Preview3D({ wish, className = "", mode = "preview", repl
     <div className={`relative h-[420px] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 shadow-glow sm:h-[520px] ${className}`}>
       <Canvas camera={{ position: [0, 1.4, 6], fov: 44 }} shadows dpr={[1, 1.6]}>
         <Suspense fallback={null}>
-          <SceneComponent wish={wish} onCelebrate={handleCelebrate} replayToken={replayToken} />
+          <SceneComponent
+            wish={wish}
+            onCelebrate={handleCelebrate}
+            replayToken={replayToken}
+            onPrimaryInteraction={onPrimaryInteraction}
+          />
         </Suspense>
       </Canvas>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#050816] via-[#050816]/70 to-transparent" />
-      <div ref={overlayRef} className="pointer-events-none absolute inset-x-0 bottom-0 p-5 sm:p-6">
-        <div className="inline-flex max-w-xl flex-col gap-2 rounded-[1.5rem] border border-white/10 bg-slate-950/65 px-5 py-4 backdrop-blur-xl">
-          <span className="text-xs uppercase tracking-[0.28em] text-cyan-100/80">
-            {template.shortLabel}
-          </span>
-          <p className="text-sm text-white/70">{template.interactionHint}</p>
+      {showOverlay ? (
+        <div ref={overlayRef} className="pointer-events-none absolute inset-x-0 bottom-0 p-5 sm:p-6">
+          <div className="inline-flex max-w-xl flex-col gap-2 rounded-[1.5rem] border border-white/10 bg-slate-950/65 px-5 py-4 backdrop-blur-xl">
+            <span className="text-xs uppercase tracking-[0.28em] text-cyan-100/80">
+              {template.shortLabel}
+            </span>
+            <p className="text-sm text-white/70">{template.interactionHint}</p>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

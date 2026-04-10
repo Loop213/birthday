@@ -5,8 +5,8 @@ import toast from "react-hot-toast";
 import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 import api, { extractErrorMessage } from "../api/http.js";
+import CinematicWishExperience from "../components/common/CinematicWishExperience.jsx";
 import CountdownTimer from "../components/common/CountdownTimer.jsx";
-import WishViewer from "../components/common/WishViewer.jsx";
 import { getBirthdayTemplate } from "../data/templates.js";
 
 function formatDateTime(value) {
@@ -163,11 +163,9 @@ export default function PublicWishPage() {
             <p className="mt-4 text-white/65">{loadError}</p>
           </div>
         ) : wish && canOpenWish ? (
-          <WishViewer
+          <CinematicWishExperience
             wish={wish}
-            mode="public"
             shareUrl={`${window.location.origin}/wish/${slug}`}
-            allowShare
           />
         ) : (
           <div className="grid min-h-[88vh] items-center gap-8 xl:grid-cols-[minmax(0,1.15fr)_420px]">
