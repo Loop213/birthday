@@ -1,9 +1,7 @@
 import axios from "axios";
 
-const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
 const api = axios.create({
-  baseURL: apiBaseUrl
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 });
 
 api.interceptors.request.use((config) => {
@@ -22,7 +20,7 @@ export function extractErrorMessage(error) {
   }
 
   if (error?.code === "ERR_NETWORK" || (error?.request && !error?.response)) {
-    return `Network error: backend unreachable or blocked by CORS. Verify VITE_API_URL (${apiBaseUrl}) and the backend CLIENT_ORIGIN setting.`;
+    return "Unable to connect to the server right now. Please try again.";
   }
 
   return (
