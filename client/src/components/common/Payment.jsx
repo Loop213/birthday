@@ -29,6 +29,8 @@ export default function Payment({
   onShareWhatsapp
 }) {
   const template = getBirthdayTemplate(wish?.templateId);
+  const isPublished = wish?.paymentStatus === "paid";
+  const reservedUrl = wish?.shareSlug ? `${window.location.origin}/wish/${wish.shareSlug}` : "";
 
   return (
     <div className="space-y-6">
@@ -92,35 +94,43 @@ export default function Payment({
 
       {wish?.shareSlug ? (
         <div className="glass-panel p-6">
-          <div className="flex items-center gap-3 text-emerald-300">
+          <div className={`flex items-center gap-3 ${isPublished ? "text-emerald-300" : "text-amber-200"}`}>
             <CheckCircle2 className="h-5 w-5" />
-            <span>Wish published</span>
+            <span>{isPublished ? "Wish published" : "Reserved wish URL"}</span>
           </div>
           <p className="mt-4 break-all rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3 text-white/75">
-            {window.location.origin}/wish/{wish.shareSlug}
+            {reservedUrl}
           </p>
-          <p className="mt-3 text-sm text-white/55">
-            Share password: <span className="font-semibold text-white/85">{sharePassword}</span>
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <button type="button" onClick={onCopyLink} className="button-secondary">
-              <Copy className="h-4 w-4" />
-              Copy Link
-            </button>
-            <a
-              href={`/wish/${wish.shareSlug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="button-secondary"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open
-            </a>
-            <button type="button" onClick={onShareWhatsapp} className="button-secondary">
-              <MessageCircleMore className="h-4 w-4" />
-              WhatsApp
-            </button>
-          </div>
+          {isPublished ? (
+            <>
+              <p className="mt-3 text-sm text-white/55">
+                Share password: <span className="font-semibold text-white/85">{sharePassword}</span>
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button type="button" onClick={onCopyLink} className="button-secondary">
+                  <Copy className="h-4 w-4" />
+                  Copy Link
+                </button>
+                <a
+                  href={`/wish/${wish.shareSlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="button-secondary"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open
+                </a>
+                <button type="button" onClick={onShareWhatsapp} className="button-secondary">
+                  <MessageCircleMore className="h-4 w-4" />
+                  WhatsApp
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-white/55">
+              The URL is reserved now, but it will stay locked until the ₹10 payment is verified.
+            </p>
+          )}
         </div>
       ) : null}
     </div>

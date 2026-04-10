@@ -193,7 +193,7 @@ export default function PreviewWishPage() {
             Preview the full 3D celebration before publishing it.
           </h1>
           <p className="mt-3 max-w-3xl text-white/60">
-            Check the interactive template, message flow, media, and soundtrack. Once it feels right, payment generates the password-protected URL.
+            Check the interactive template, message flow, media, and soundtrack. Your URL is reserved as soon as the draft is created, and payment activates it for sharing.
           </p>
         </div>
 
@@ -205,7 +205,7 @@ export default function PreviewWishPage() {
               wish={renderedWish}
               mode="preview"
               shareUrl={shareUrl}
-              allowShare={Boolean(wish.shareSlug)}
+              allowShare={wish?.paymentStatus === "paid" && Boolean(wish.shareSlug)}
             />
 
             <div className="space-y-6">

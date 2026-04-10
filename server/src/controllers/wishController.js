@@ -1,6 +1,7 @@
 import Wish from "../models/Wish.js";
 import env from "../config/env.js";
 import { uploadAsset } from "../services/storageService.js";
+import { createUniqueShareSlug } from "../services/shareSlugService.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/appError.js";
 import { parseBirthdayScheduleDate } from "../utils/dateHelpers.js";
@@ -79,6 +80,7 @@ export const createWish = asyncHandler(async (req, res) => {
     owner: req.user._id,
     recipientName,
     relation,
+    shareSlug: await createUniqueShareSlug(),
     templateId: selectedTemplateId,
     message,
     shayari,
@@ -110,7 +112,10 @@ export const createWish = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: "Wish draft created.",
-    data: wish
+    data: {
+      ...wish.toObject(),
+      shareUrl: `${env.clientPublicUrl}/wish/${wish.shareSlug}`
+    }
   });
 });
 

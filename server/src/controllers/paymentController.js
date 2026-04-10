@@ -3,10 +3,10 @@ import Payment from "../models/Payment.js";
 import Wish from "../models/Wish.js";
 import { validateCoupon } from "../services/couponService.js";
 import { createPaymentOrder, verifyPaymentSignature } from "../services/paymentService.js";
+import { createUniqueShareSlug } from "../services/shareSlugService.js";
 import env from "../config/env.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/appError.js";
-import { generateShareSlug } from "../utils/generateShareSlug.js";
 import { BASE_WISH_PRICE, calculateDiscount } from "../utils/pricing.js";
 
 async function ensureWishOwnership(wishId, userId) {
@@ -15,16 +15,6 @@ async function ensureWishOwnership(wishId, userId) {
     throw new AppError("Wish not found.", 404);
   }
   return wish;
-}
-
-async function createUniqueShareSlug() {
-  let shareSlug = generateShareSlug();
-
-  while (await Wish.exists({ shareSlug })) {
-    shareSlug = generateShareSlug();
-  }
-
-  return shareSlug;
 }
 
 export const createOrder = asyncHandler(async (req, res) => {
