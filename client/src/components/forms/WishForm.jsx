@@ -1,29 +1,53 @@
-import { useRef, useState } from "react";
-import { musicPresets, relations, themes } from "../../data/options.js";
+import { useEffect, useRef, useState } from "react";
+import { musicPresets, relations } from "../../data/options.js";
+import { getBirthdayTemplate } from "../../data/templates.js";
 
-const defaultForm = {
-  recipientName: "",
-  relation: relations[0],
-  message: "",
-  shayari: "",
-  theme: themes[0].value,
-  accessPassword: "",
-  deliveryMode: "manual",
-  scheduleAt: "",
-  recipientEmail: "",
-  recipientPhone: "",
-  timezone: "Asia/Kolkata",
-  musicMode: "preset",
-  musicPreset: musicPresets[0].value
-};
+function buildDefaultForm(templateId) {
+  const template = getBirthdayTemplate(templateId);
 
-export default function WishForm({ onSave, submitting = false }) {
-  const [form, setForm] = useState(defaultForm);
+  return {
+    recipientName: "",
+    relation: relations[0],
+    message: "",
+    shayari: "",
+    accessPassword: "",
+    deliveryMode: "manual",
+    scheduleAt: "",
+    recipientEmail: "",
+    recipientPhone: "",
+    timezone: "Asia/Kolkata",
+    musicMode: "preset",
+    musicPreset: template.defaultMusicPreset
+  };
+}
+
+export default function WishForm({
+  selectedTemplateId,
+  onSave,
+  submitting = false
+}) {
+  const [form, setForm] = useState(() => buildDefaultForm(selectedTemplateId));
   const [images, setImages] = useState([]);
   const [musicUpload, setMusicUpload] = useState(null);
   const [voiceMessage, setVoiceMessage] = useState(null);
   const submitIntentRef = useRef("preview");
+  const previousTemplateIdRef = useRef(selectedTemplateId);
+  const selectedTemplate = getBirthdayTemplate(selectedTemplateId);
   const today = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    const previousTemplate = getBirthdayTemplate(previousTemplateIdRef.current);
+    previousTemplateIdRef.current = selectedTemplateId;
+
+    setForm((current) => ({
+      ...current,
+      musicPreset:
+        current.musicMode === "preset" &&
+        (!current.musicPreset || current.musicPreset === previousTemplate.defaultMusicPreset)
+          ? selectedTemplate.defaultMusicPreset
+          : current.musicPreset
+    }));
+  }, [selectedTemplate.defaultMusicPreset, selectedTemplateId]);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -33,6 +57,8 @@ export default function WishForm({ onSave, submitting = false }) {
   async function handleSubmit(event) {
     event.preventDefault();
     const payload = new FormData();
+
+    payload.append("templateId", selectedTemplateId);
 
     Object.entries(form).forEach(([key, value]) => {
       if (value) {
@@ -59,6 +85,44 @@ export default function WishForm({ onSave, submitting = false }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      <section className="glass-panel overflow-hidden p-0">
+        <div className={`h-32 bg-gradient-to-br ${selectedTemplate.halo}`} />
+        <div className="space-y-5 p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <span className="badge">Step 2</span>
+              <h2 className="mt-4 text-3xl font-semibold text-white">
+                Personalize {selectedTemplate.shortLabel}
+              </h2>
+              <p className="mt-2 max-w-3xl text-white/60">
+                The selected 3D stage drives the scene, motion, and mood automatically. You only need to add the personal touches.
+              </p>
+            </div>
+            <div className="max-w-sm rounded-[1.5rem] border border-white/10 bg-slate-950/60 p-4 text-sm text-white/65">
+              <p className="text-xs uppercase tracking-[0.22em] text-white/45">Interaction</p>
+              <p className="mt-2">{selectedTemplate.interactionHint}</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.22em] text-white/45">Auto soundtrack</p>
+              <p className="mt-2">
+                {
+                  musicPresets.find((preset) => preset.value === selectedTemplate.defaultMusicPreset)?.label
+                }
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {selectedTemplate.features.map((feature) => (
+              <span
+                key={feature}
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/65"
+              >
+                {feature}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-5 md:grid-cols-2">
         <label className="space-y-2">
           <span className="field-label">Recipient Name</span>
@@ -70,6 +134,9 @@ export default function WishForm({ onSave, submitting = false }) {
             className="field-input"
             placeholder="Aarohi"
           />
+          <p className="text-sm text-white/45">
+            This name will appear as 3D text inside the selected template.
+          </p>
         </label>
 
         <label className="space-y-2">
@@ -114,21 +181,15 @@ export default function WishForm({ onSave, submitting = false }) {
       </section>
 
       <section className="grid gap-5 lg:grid-cols-3">
-        <label className="space-y-2">
-          <span className="field-label">Theme</span>
-          <select
-            name="theme"
-            value={form.theme}
-            onChange={updateField}
-            className="field-input"
-          >
-            {themes.map((theme) => (
-              <option key={theme.value} value={theme.value}>
-                {theme.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="space-y-2">
+          <span className="field-label">Template Mood</span>
+          <div className="field-input flex min-h-[50px] items-center justify-between">
+            <span>{selectedTemplate.label}</span>
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/55">
+              Auto themed
+            </span>
+          </div>
+        </div>
 
         <label className="space-y-2">
           <span className="field-label">Access Password</span>
@@ -215,7 +276,7 @@ export default function WishForm({ onSave, submitting = false }) {
           <div>
             <p className="field-label">Memory Gallery</p>
             <p className="mt-1 text-sm text-white/55">
-              Upload up to 6 images for the cinematic reveal.
+              Upload up to 6 images. Family and romantic scenes especially shine with photo textures.
             </p>
           </div>
           <input
@@ -232,7 +293,7 @@ export default function WishForm({ onSave, submitting = false }) {
           <div>
             <p className="field-label">Music & Voice</p>
             <p className="mt-1 text-sm text-white/55">
-              Choose a preset soundtrack or upload your own audio.
+              Use the template soundtrack or upload a custom audio track and voice note.
             </p>
           </div>
 
@@ -295,9 +356,9 @@ export default function WishForm({ onSave, submitting = false }) {
 
       <div className="glass-panel flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-lg font-semibold text-white">Preview before payment</p>
+          <p className="text-lg font-semibold text-white">Step 3: Preview before payment</p>
           <p className="mt-1 text-sm text-white/60">
-            Save the draft, inspect the full immersive experience, then unlock the paid share link.
+            Save the draft, inspect the full interactive 3D scene, then unlock the paid share link.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">

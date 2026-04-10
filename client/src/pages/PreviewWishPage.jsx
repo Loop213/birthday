@@ -1,15 +1,12 @@
-import { CheckCircle2, Copy, ExternalLink, MessageCircleMore, TicketPercent } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ShieldCheck, Sparkles, TimerReset } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
 import api, { extractErrorMessage } from "../api/http.js";
-import WishExperience from "../components/three/WishExperience.jsx";
-import { musicPresets, themePalette } from "../data/options.js";
-
-function formatCurrency(amount) {
-  return `Rs.${(amount / 100).toFixed(2)}`;
-}
+import Payment from "../components/common/Payment.jsx";
+import WishViewer from "../components/common/WishViewer.jsx";
+import { getBirthdayTemplate } from "../data/templates.js";
 
 async function loadRazorpayScript() {
   if (window.Razorpay) {
@@ -146,12 +143,20 @@ export default function PreviewWishPage() {
   }
 
   async function copyLink() {
+    if (!wish?.shareSlug) {
+      return;
+    }
+
     const link = `${window.location.origin}/wish/${wish.shareSlug}`;
     await navigator.clipboard.writeText(link);
     toast.success("Share link copied.");
   }
 
   function shareOnWhatsapp() {
+    if (!wish?.shareSlug) {
+      return;
+    }
+
     const link = `${window.location.origin}/wish/${wish.shareSlug}`;
     const password = sessionStorage.getItem(`wish-password-${wish._id}`) || "your chosen password";
     const text = encodeURIComponent(
@@ -160,8 +165,20 @@ export default function PreviewWishPage() {
     window.open(`https://wa.me/?text=${text}`, "_blank");
   }
 
-  const colors = themePalette[preview?.theme || "romantic"];
-  const presetTrack = musicPresets.find((preset) => preset.value === wish?.music?.preset);
+  const renderedWish = useMemo(() => {
+    if (!wish && !preview) {
+      return null;
+    }
+
+    return {
+      ...(wish || {}),
+      ...(preview || {})
+    };
+  }, [preview, wish]);
+
+  const template = getBirthdayTemplate(renderedWish?.templateId);
+  const sharePassword = wish ? sessionStorage.getItem(`wish-password-${wish._id}`) || "Use the password you created earlier" : "";
+  const shareUrl = wish?.shareSlug ? `${window.location.origin}/wish/${wish.shareSlug}` : "";
 
   return (
     <>
@@ -170,149 +187,87 @@ export default function PreviewWishPage() {
       </Helmet>
 
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {loading || !wish || !preview ? (
-          <div className="glass-panel px-6 py-8 text-white/70">Preparing preview...</div>
+        <div className="mb-8">
+          <span className="badge">Step 4</span>
+          <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
+            Preview the full 3D celebration before publishing it.
+          </h1>
+          <p className="mt-3 max-w-3xl text-white/60">
+            Check the interactive template, message flow, media, and soundtrack. Once it feels right, payment generates the password-protected URL.
+          </p>
+        </div>
+
+        {loading || !wish || !renderedWish ? (
+          <div className="glass-panel px-6 py-8 text-white/70">Preparing template preview...</div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+            <WishViewer
+              wish={renderedWish}
+              mode="preview"
+              shareUrl={shareUrl}
+              allowShare={Boolean(wish.shareSlug)}
+            />
+
             <div className="space-y-6">
-              <div className="glass-panel overflow-hidden p-6">
-                <div className={`rounded-[2rem] bg-gradient-to-br ${colors.halo} p-3`}>
-                  <WishExperience accent={colors.accent} glow={colors.glow} />
-                </div>
+              <Payment
+                wish={wish}
+                pricing={pricing}
+                couponCode={couponCode}
+                onCouponCodeChange={setCouponCode}
+                onApplyCoupon={applyCoupon}
+                onPayNow={payNow}
+                processing={processing}
+                sharePassword={sharePassword}
+                onCopyLink={copyLink}
+                onShareWhatsapp={shareOnWhatsapp}
+              />
 
-                <div className="mt-6">
-                  <span className="badge">{preview.theme}</span>
-                  <h1 className="mt-4 text-4xl font-semibold text-white">
-                    Birthday preview for {preview.recipientName}
-                  </h1>
-                  <p className="mt-3 text-white/65">{preview.message || "Add a personal message to deepen the reveal."}</p>
-                  <blockquote className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/5 p-5 text-white/70">
-                    {preview.shayari || "Your shayari will glow here once you add it to the birthday page."}
-                  </blockquote>
-                </div>
+              <div className="glass-panel p-6">
+                <span className="badge">Template Blueprint</span>
+                <h2 className="mt-4 text-2xl font-semibold text-white">{template.label}</h2>
+                <p className="mt-3 text-white/60">{template.description}</p>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="mt-6 space-y-4">
                   <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-white/45">Images</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{preview.images?.length || 0}</p>
+                    <div className="flex items-center gap-3 text-cyan-100">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Interaction</span>
+                    </div>
+                    <p className="mt-3 text-sm text-white/65">{template.interactionHint}</p>
                   </div>
+
                   <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-white/45">Music</p>
-                    <p className="mt-2 text-lg text-white/80">
-                      {wish.music?.type === "upload" ? "Custom upload ready" : presetTrack?.label || "Preset track"}
+                    <div className="flex items-center gap-3 text-white/80">
+                      <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                      <span>Protection</span>
+                    </div>
+                    <p className="mt-3 text-sm text-white/65">
+                      Every published page is password protected and only stays active for 24 hours after activation.
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center gap-3 text-white/80">
+                      <TimerReset className="h-4 w-4 text-amber-200" />
+                      <span>Scheduling</span>
+                    </div>
+                    <p className="mt-3 text-sm text-white/65">
+                      Scheduled wishes go live automatically at 12:00 AM on the selected birthday date.
                     </p>
                   </div>
                 </div>
-              </div>
 
-              {wish.images?.length ? (
-                <div className="glass-panel p-6">
-                  <h2 className="text-xl font-semibold text-white">Uploaded memories</h2>
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {wish.images.map((image) => (
-                      <img
-                        key={image.url}
-                        src={image.url}
-                        alt={wish.recipientName}
-                        className="h-48 w-full rounded-[1.5rem] object-cover"
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="space-y-6">
-              <div className="glass-panel p-6">
-                <span className="badge">Checkout</span>
-                <h2 className="mt-4 text-3xl font-semibold text-white">Publish the wish page</h2>
-                <p className="mt-3 text-white/60">
-                  Secure payment unlocks the unique share URL. Scheduled wishes go live automatically at 12:00 AM on the selected birthday date.
-                </p>
-
-                <div className="mt-6 space-y-3">
-                  <label className="space-y-2">
-                    <span className="field-label">Coupon code</span>
-                    <div className="flex gap-3">
-                      <input
-                        value={couponCode}
-                        onChange={(event) => setCouponCode(event.target.value)}
-                        className="field-input"
-                        placeholder="SAVE20"
-                      />
-                      <button type="button" onClick={applyCoupon} className="button-secondary shrink-0">
-                        <TicketPercent className="h-4 w-4" />
-                        Apply
-                      </button>
-                    </div>
-                  </label>
-                </div>
-
-                <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-5">
-                  <div className="flex items-center justify-between text-white/60">
-                    <span>Base price</span>
-                    <span>{formatCurrency(pricing.baseAmount)}</span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-white/60">
-                    <span>Coupon savings</span>
-                    <span>- {formatCurrency(pricing.discountAmount)}</span>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-lg font-semibold text-white">
-                    <span>Total</span>
-                    <span>{formatCurrency(pricing.finalAmount)}</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={payNow}
-                  disabled={processing || wish.paymentStatus === "paid"}
-                  className="button-primary mt-6 w-full justify-center"
-                >
-                  {wish.paymentStatus === "paid"
-                    ? "Already Published"
-                    : processing
-                      ? "Processing..."
-                      : `Pay ${formatCurrency(pricing.finalAmount)}`}
-                </button>
-              </div>
-
-              {wish.shareSlug ? (
-                <div className="glass-panel p-6">
-                  <div className="flex items-center gap-3 text-emerald-300">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span>Wish published</span>
-                  </div>
-                  <p className="mt-4 break-all rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3 text-white/75">
-                    {window.location.origin}/wish/{wish.shareSlug}
-                  </p>
-                  <p className="mt-3 text-sm text-white/55">
-                    Password to share:{" "}
-                    <span className="font-semibold text-white/80">
-                      {sessionStorage.getItem(`wish-password-${wish._id}`) || "Use the password you created earlier"}
-                    </span>
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button type="button" onClick={copyLink} className="button-secondary">
-                      <Copy className="h-4 w-4" />
-                      Copy Link
-                    </button>
-                    <a
-                      href={`/wish/${wish.shareSlug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="button-secondary"
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {template.features.map((feature) => (
+                    <span
+                      key={feature}
+                      className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1 text-xs text-white/60"
                     >
-                      <ExternalLink className="h-4 w-4" />
-                      Open
-                    </a>
-                    <button type="button" onClick={shareOnWhatsapp} className="button-secondary">
-                      <MessageCircleMore className="h-4 w-4" />
-                      WhatsApp
-                    </button>
-                  </div>
+                      {feature}
+                    </span>
+                  ))}
                 </div>
-              ) : null}
+              </div>
             </div>
           </div>
         )}

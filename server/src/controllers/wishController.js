@@ -5,6 +5,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/appError.js";
 import { parseBirthdayScheduleDate } from "../utils/dateHelpers.js";
 import { compareValue, hashValue } from "../utils/security.js";
+import {
+  resolveTemplateId,
+  resolveTemplateMusicPreset,
+  resolveTemplateTheme
+} from "../utils/templateConfig.js";
 import { getPublicWishPayload } from "../utils/wishPublicView.js";
 
 function parseBoolean(value) {
@@ -43,6 +48,7 @@ export const createWish = asyncHandler(async (req, res) => {
   const {
     recipientName,
     relation,
+    templateId,
     message,
     shayari,
     theme,
@@ -66,14 +72,17 @@ export const createWish = asyncHandler(async (req, res) => {
 
   const { images, musicAsset, voiceAsset } = await extractWishAssets(req.files);
   const selectedTimezone = timezone || "Asia/Kolkata";
+  const selectedTemplateId = resolveTemplateId(templateId);
+  const selectedMusicPreset = musicPreset || resolveTemplateMusicPreset(selectedTemplateId);
 
   const wish = await Wish.create({
     owner: req.user._id,
     recipientName,
     relation,
+    templateId: selectedTemplateId,
     message,
     shayari,
-    theme,
+    theme: theme || resolveTemplateTheme(selectedTemplateId),
     deliveryMode: deliveryMode || "manual",
     scheduleAt: parseBirthdayScheduleDate(scheduleAt, selectedTimezone),
     recipientEmail,
@@ -89,10 +98,10 @@ export const createWish = asyncHandler(async (req, res) => {
         }
       : {
           type: "preset",
-          preset: musicPreset || "sparkle-night",
+          preset: selectedMusicPreset,
           url: "",
           publicId: "",
-          name: musicPreset || "sparkle-night"
+          name: selectedMusicPreset
         },
     voiceMessage: voiceAsset,
     status: "draft"
@@ -110,6 +119,7 @@ export const updateWish = asyncHandler(async (req, res) => {
   const {
     recipientName,
     relation,
+    templateId,
     message,
     shayari,
     theme,
@@ -128,12 +138,15 @@ export const updateWish = asyncHandler(async (req, res) => {
 
   const retainImages = parseBoolean(keepExistingImages);
   const selectedTimezone = timezone || wish.timezone || "Asia/Kolkata";
+  const nextTemplateId = templateId ? resolveTemplateId(templateId) : wish.templateId;
+  const nextMusicPreset = musicPreset || wish.music?.preset || resolveTemplateMusicPreset(nextTemplateId);
 
   wish.recipientName = recipientName || wish.recipientName;
   wish.relation = relation || wish.relation;
+  wish.templateId = nextTemplateId;
   wish.message = message ?? wish.message;
   wish.shayari = shayari ?? wish.shayari;
-  wish.theme = theme || wish.theme;
+  wish.theme = theme || resolveTemplateTheme(nextTemplateId) || wish.theme;
   wish.deliveryMode = deliveryMode || wish.deliveryMode;
   wish.scheduleAt = scheduleAt
     ? parseBirthdayScheduleDate(scheduleAt, selectedTimezone)
@@ -160,10 +173,10 @@ export const updateWish = asyncHandler(async (req, res) => {
   } else if (musicMode === "preset") {
     wish.music = {
       type: "preset",
-      preset: musicPreset || wish.music.preset || "sparkle-night",
+      preset: nextMusicPreset,
       url: "",
       publicId: "",
-      name: musicPreset || wish.music.name || "sparkle-night"
+      name: nextMusicPreset
     };
   }
 
@@ -218,7 +231,7 @@ export const previewWish = asyncHandler(async (req, res) => {
 
 export const getWishPublicMeta = asyncHandler(async (req, res) => {
   const wish = await Wish.findOne({ shareSlug: req.params.slug }).select(
-    "recipientName relation theme status expiresAt createdAt"
+    "recipientName relation templateId theme status expiresAt createdAt"
   );
 
   if (!wish) {

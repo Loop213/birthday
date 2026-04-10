@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { TEMPLATE_IDS } from "../utils/templateConfig.js";
 
 const mediaSchema = new mongoose.Schema(
   {
@@ -26,6 +27,11 @@ const wishSchema = new mongoose.Schema(
     relation: {
       type: String,
       required: true
+    },
+    templateId: {
+      type: String,
+      enum: TEMPLATE_IDS,
+      default: "cake-celebration"
     },
     message: {
       type: String,
@@ -163,6 +169,7 @@ const wishSchema = new mongoose.Schema(
 );
 
 wishSchema.index({ owner: 1, createdAt: -1 });
+wishSchema.index({ templateId: 1 });
 wishSchema.index({ scheduleAt: 1 });
 wishSchema.index({ expiresAt: 1 });
 

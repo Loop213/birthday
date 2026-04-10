@@ -47,19 +47,34 @@ export const themes = [
 
 export const musicPresets = [
   {
-    value: "sparkle-night",
-    label: "Sparkle Night",
+    value: "celebration-dream",
+    label: "Celebration Dream",
     url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
   },
   {
-    value: "golden-hour",
-    label: "Golden Hour",
+    value: "sky-drift",
+    label: "Sky Drift",
     url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+  },
+  {
+    value: "moonlight-vows",
+    label: "Moonlight Vows",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+  },
+  {
+    value: "party-thunder",
+    label: "Party Thunder",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
+  },
+  {
+    value: "homecoming-notes",
+    label: "Homecoming Notes",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3"
   },
   {
     value: "afterglow",
     label: "Afterglow",
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3"
   }
 ];
 

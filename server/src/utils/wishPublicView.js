@@ -3,6 +3,7 @@ export function getPublicWishPayload(wish) {
     id: wish._id,
     recipientName: wish.recipientName,
     relation: wish.relation,
+    templateId: wish.templateId,
     message: wish.message,
     shayari: wish.shayari,
     theme: wish.theme,
