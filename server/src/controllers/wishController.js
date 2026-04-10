@@ -236,7 +236,7 @@ export const previewWish = asyncHandler(async (req, res) => {
 
 export const getWishPublicMeta = asyncHandler(async (req, res) => {
   const wish = await Wish.findOne({ shareSlug: req.params.slug }).select(
-    "recipientName relation templateId theme status expiresAt createdAt"
+    "recipientName relation templateId theme status expiresAt createdAt scheduleAt deliveredAt"
   );
 
   if (!wish) {
@@ -257,10 +257,6 @@ export const accessWish = asyncHandler(async (req, res) => {
     throw new AppError("Wish page not found.", 404);
   }
 
-  if (!wish.isActive || wish.status !== "active") {
-    throw new AppError("This wish page is not active right now.", 400);
-  }
-
   if (wish.expiresAt && wish.expiresAt <= new Date()) {
     wish.status = "expired";
     wish.isActive = false;
@@ -274,6 +270,31 @@ export const accessWish = asyncHandler(async (req, res) => {
     throw new AppError("Incorrect password.", 401);
   }
 
+  if (wish.status === "scheduled" && wish.scheduleAt && wish.scheduleAt > new Date()) {
+    res.json({
+      success: true,
+      data: {
+        accessState: "countdown",
+        unlocksAt: wish.scheduleAt,
+        wish: getPublicWishPayload(wish),
+        shareUrl: `${env.clientPublicUrl}/wish/${wish.shareSlug}`
+      }
+    });
+    return;
+  }
+
+  if ((!wish.isActive || wish.status !== "active") && wish.scheduleAt && wish.scheduleAt <= new Date()) {
+    wish.status = "active";
+    wish.isActive = true;
+    wish.deliveredAt = wish.deliveredAt || new Date();
+    wish.expiresAt = wish.expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await wish.save();
+  }
+
+  if (!wish.isActive || wish.status !== "active") {
+    throw new AppError("This wish page is not active right now.", 400);
+  }
+
   if (!wish.openedAt) {
     wish.openedAt = new Date();
     await wish.save();
@@ -282,6 +303,7 @@ export const accessWish = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: {
+      accessState: "open",
       wish: getPublicWishPayload(wish),
       shareUrl: `${env.clientPublicUrl}/wish/${wish.shareSlug}`
     }

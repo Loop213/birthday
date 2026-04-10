@@ -33,7 +33,7 @@ export default function WishForm({
   const submitIntentRef = useRef("preview");
   const previousTemplateIdRef = useRef(selectedTemplateId);
   const selectedTemplate = getBirthdayTemplate(selectedTemplateId);
-  const today = new Date().toISOString().slice(0, 10);
+  const nowLocal = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16);
 
   useEffect(() => {
     const previousTemplate = getBirthdayTemplate(previousTemplateIdRef.current);
@@ -226,23 +226,23 @@ export default function WishForm({
               className="field-input"
             >
               <option value="manual">Manual Share</option>
-              <option value="scheduled">Auto-send at birthday time</option>
+              <option value="scheduled">Auto-send 1 hour before birthday</option>
             </select>
           </label>
 
           <label className="space-y-2">
-            <span className="field-label">Birthday Schedule</span>
+            <span className="field-label">Birthday Date & Time</span>
             <input
-              type="date"
+              type="datetime-local"
               name="scheduleAt"
               value={form.scheduleAt}
               onChange={updateField}
-              min={today}
+              min={nowLocal}
               required={form.deliveryMode === "scheduled"}
               className="field-input"
             />
             <p className="text-sm text-white/50">
-              Auto-send will trigger at 12:00 AM on the selected birthday date.
+              We will send the link 1 hour before this time, and the page will unlock exactly at the birthday moment.
             </p>
           </label>
 

@@ -12,6 +12,8 @@ export function getPublicWishPayload(wish) {
     voiceMessage: wish.voiceMessage,
     shareSlug: wish.shareSlug,
     ownerName: wish.owner?.name,
+    status: wish.status,
+    scheduleAt: wish.scheduleAt,
     expiresAt: wish.expiresAt,
     openedAt: wish.openedAt
   };

@@ -10,9 +10,11 @@ import {
   VolumeX
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import Preview3D from "../three/Preview3D.jsx";
 import { getBirthdayTemplate } from "../../data/templates.js";
 import { musicPresets } from "../../data/options.js";
+import { defaultGalleryImages } from "../../data/defaultGallery.js";
 
 export default function WishViewer({
   wish,
@@ -42,6 +44,8 @@ export default function WishViewer({
         timeStyle: "short"
       }).format(new Date(wish.expiresAt))
     : "";
+  const galleryImages = wish?.images?.length ? wish.images : defaultGalleryImages.map((url) => ({ url }));
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
 
   useEffect(() => {
     if (!wish?.message) {
@@ -91,6 +95,22 @@ export default function WishViewer({
     setIsPlaying(true);
     setVolume(0.72);
   }, [wishIdentity]);
+
+  useEffect(() => {
+    setActiveGalleryIndex(0);
+  }, [wishIdentity]);
+
+  useEffect(() => {
+    if (galleryImages.length <= 1) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setActiveGalleryIndex((current) => (current + 1) % galleryImages.length);
+    }, 3200);
+
+    return () => window.clearInterval(timer);
+  }, [galleryImages.length]);
 
   async function toggleFullscreen() {
     if (!containerRef.current) {
@@ -257,18 +277,68 @@ export default function WishViewer({
         </div>
       </div>
 
-      {wish?.images?.length ? (
+      {galleryImages.length ? (
         <div className="glass-panel p-6">
-          <h2 className="text-2xl font-semibold text-white">Memory gallery</h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {wish.images.map((image) => (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">Memory gallery</h2>
+              <p className="mt-2 text-white/55">
+                {wish?.images?.length
+                  ? "Uploaded memories drifting through the celebration."
+                  : "Beautiful fallback frames keep the page glowing even before photos are added."}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {galleryImages.map((image, index) => (
+                <button
+                  key={`${image.url}-${index}`}
+                  type="button"
+                  onClick={() => setActiveGalleryIndex(index)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    index === activeGalleryIndex ? "w-10 bg-cyan-200" : "w-2.5 bg-white/25"
+                  }`}
+                  aria-label={`Open gallery image ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_0.8fr]">
+            <motion.div
+              key={galleryImages[activeGalleryIndex]?.url}
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="group overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5"
+            >
               <img
-                key={image.url}
-                src={image.url}
+                src={galleryImages[activeGalleryIndex]?.url}
                 alt={wish.recipientName}
-                className="h-56 w-full rounded-[1.5rem] object-cover"
+                className="h-[320px] w-full object-cover transition duration-500 group-hover:scale-105"
               />
-            ))}
+            </motion.div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              {galleryImages.slice(0, 3).map((image, index) => (
+                <motion.button
+                  key={`${image.url}-${index}-thumb`}
+                  type="button"
+                  whileHover={{ y: -4 }}
+                  onClick={() => setActiveGalleryIndex(index)}
+                  className={`overflow-hidden rounded-[1.35rem] border bg-white/5 text-left transition ${
+                    index === activeGalleryIndex
+                      ? "border-cyan-300/45 shadow-glow"
+                      : "border-white/10"
+                  }`}
+                >
+                  <img
+                    src={image.url}
+                    alt={`${wish.recipientName} memory ${index + 1}`}
+                    className="h-24 w-full object-cover"
+                  />
+                </motion.button>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}

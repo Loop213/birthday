@@ -150,6 +150,10 @@ const wishSchema = new mongoose.Schema(
       type: Date,
       default: null
     },
+    reminderSentAt: {
+      type: Date,
+      default: null
+    },
     openedAt: {
       type: Date,
       default: null

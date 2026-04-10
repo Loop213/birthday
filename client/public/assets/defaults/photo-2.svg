@@ -1,0 +1,16 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#050816"/>
+  <rect x="56" y="56" width="1088" height="788" rx="38" fill="url(#paint0_linear)"/>
+  <path d="M142 640C251.492 513.448 358.128 450.171 461.908 450.171C565.689 450.171 665.592 505.76 761.617 617.937L833.618 702L1034 475" stroke="#E9FBFF" stroke-opacity="0.75" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="278" cy="287" r="120" fill="#7CF5B3" fill-opacity="0.2"/>
+  <circle cx="835" cy="213" r="152" fill="#7EA6FF" fill-opacity="0.19"/>
+  <text x="100" y="714" fill="#F8FBFF" font-family="Arial, sans-serif" font-size="74" font-weight="700">Captured with Love</text>
+  <text x="104" y="778" fill="#FFFFFF" fill-opacity="0.7" font-family="Arial, sans-serif" font-size="34">A premium fallback frame for wishes waiting on photos.</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="56" y1="56" x2="1105" y2="819" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12203E"/>
+      <stop offset="0.52" stop-color="#132C55"/>
+      <stop offset="1" stop-color="#101827"/>
+    </linearGradient>
+  </defs>
+</svg>

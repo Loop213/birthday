@@ -1,0 +1,18 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="48" fill="#12081C"/>
+  <rect x="52" y="52" width="1096" height="796" rx="40" fill="url(#paint0_linear)"/>
+  <circle cx="251" cy="215" r="114" fill="#FFD166" fill-opacity="0.18"/>
+  <circle cx="929" cy="248" r="171" fill="#4BF4FF" fill-opacity="0.14"/>
+  <circle cx="804" cy="690" r="209" fill="#FF4ECD" fill-opacity="0.16"/>
+  <path d="M292 582C401.822 471.874 510.126 416.811 616.912 416.811C723.698 416.811 826.727 470.463 925.999 577.767" stroke="#FFF4FB" stroke-opacity="0.82" stroke-width="18" stroke-linecap="round"/>
+  <path d="M417 477C468.333 425.667 528.333 400 597 400C665.667 400 726.333 425.667 779 477" stroke="#FFF4FB" stroke-opacity="0.5" stroke-width="12" stroke-linecap="round"/>
+  <text x="104" y="710" fill="#FFF7EF" font-family="Arial, sans-serif" font-size="76" font-weight="700">Birthday Memories</text>
+  <text x="106" y="776" fill="#FFFFFF" fill-opacity="0.7" font-family="Arial, sans-serif" font-size="34">Your uploaded gallery will appear here if no custom photos are added yet.</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="87" y1="78" x2="1073" y2="832" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#29133B"/>
+      <stop offset="0.5" stop-color="#0F2955"/>
+      <stop offset="1" stop-color="#341028"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -1,5 +1,6 @@
 import { Float, Sparkles, useTexture } from "@react-three/drei";
 import { NameText3D, SceneFloor } from "./shared.jsx";
+import { defaultGalleryImages } from "../../../data/defaultGallery.js";
 
 function FramedPhotos({ imageUrls }) {
   const textures = useTexture(imageUrls);
@@ -47,7 +48,10 @@ function EmptyFrames() {
 }
 
 export default function FamilyWarmthScene({ wish }) {
-  const imageUrls = (wish.images || []).slice(0, 4).map((image) => image.url);
+  const imageUrls = (wish.images?.length
+    ? wish.images.slice(0, 4).map((image) => image.url)
+    : defaultGalleryImages.slice(0, 3)
+  );
 
   return (
     <>
