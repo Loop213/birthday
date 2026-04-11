@@ -236,7 +236,7 @@ export const previewWish = asyncHandler(async (req, res) => {
 
 export const getWishPublicMeta = asyncHandler(async (req, res) => {
   const wish = await Wish.findOne({ shareSlug: req.params.slug }).select(
-    "recipientName relation templateId theme status expiresAt createdAt scheduleAt deliveredAt"
+    "recipientName relation templateId theme status orderStatus expiresAt createdAt scheduleAt deliveredAt"
   );
 
   if (!wish) {
