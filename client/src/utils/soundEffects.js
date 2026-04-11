@@ -65,3 +65,13 @@ export function playFireworkSound() {
     type: "sawtooth"
   });
 }
+
+export function playPaperOpenSound() {
+  playSweep({
+    startFrequency: 480,
+    endFrequency: 140,
+    duration: 0.26,
+    volume: 0.022,
+    type: "triangle"
+  });
+}

@@ -1,4 +1,4 @@
-import { Ban, BarChart3, Gift, ShieldAlert, Tags, Trash2, UserRound } from "lucide-react";
+import { Ban, BarChart3, CheckCircle2, Gift, ShieldAlert, Tags, Trash2, UserRound, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Helmet } from "react-helmet-async";
@@ -40,6 +40,8 @@ export default function AdminDashboardPage() {
   const [recentWishes, setRecentWishes] = useState([]);
   const [users, setUsers] = useState([]);
   const [wishes, setWishes] = useState([]);
+  const [manualOrders, setManualOrders] = useState([]);
+  const [orderFilter, setOrderFilter] = useState("pending");
   const [coupons, setCoupons] = useState([]);
   const [couponForm, setCouponForm] = useState(blankCoupon);
   const [editingCouponId, setEditingCouponId] = useState("");
@@ -47,11 +49,12 @@ export default function AdminDashboardPage() {
 
   async function loadAdminData() {
     try {
-      const [dashboardRes, usersRes, wishesRes, couponsRes] = await Promise.all([
+      const [dashboardRes, usersRes, wishesRes, couponsRes, ordersRes] = await Promise.all([
         api.get("/admin/dashboard"),
         api.get("/admin/users"),
         api.get("/admin/wishes"),
-        api.get("/coupons")
+        api.get("/coupons"),
+        api.get(`/admin/orders?status=${orderFilter}`)
       ]);
 
       setStats(dashboardRes.data.data.stats);
@@ -60,6 +63,7 @@ export default function AdminDashboardPage() {
       setUsers(usersRes.data.data);
       setWishes(wishesRes.data.data);
       setCoupons(couponsRes.data.data);
+      setManualOrders(ordersRes.data.data);
     } catch (error) {
       toast.error(extractErrorMessage(error));
     } finally {
@@ -69,7 +73,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     loadAdminData();
-  }, []);
+  }, [orderFilter]);
 
   async function toggleUser(userId) {
     try {
@@ -85,6 +89,16 @@ export default function AdminDashboardPage() {
     try {
       await api.delete(`/admin/wishes/${wishId}`);
       toast.success("Wish moderated and removed.");
+      await loadAdminData();
+    } catch (error) {
+      toast.error(extractErrorMessage(error));
+    }
+  }
+
+  async function handleOrderDecision(orderId, decision, note = "") {
+    try {
+      await api.patch(`/admin/orders/${orderId}/${decision}`, { note });
+      toast.success(`Manual order ${decision}d.`);
       await loadAdminData();
     } catch (error) {
       toast.error(extractErrorMessage(error));
@@ -130,6 +144,7 @@ export default function AdminDashboardPage() {
     { value: "overview", label: "Overview", icon: BarChart3 },
     { value: "users", label: "Users", icon: UserRound },
     { value: "coupons", label: "Coupons", icon: Tags },
+    { value: "orders", label: "Manual Orders", icon: CheckCircle2 },
     { value: "moderation", label: "Moderation", icon: ShieldAlert }
   ];
 
@@ -179,7 +194,8 @@ export default function AdminDashboardPage() {
                     ["Users", stats.totalUsers, UserRound],
                     ["Wish pages", stats.totalWishes, Gift],
                     ["Coupons", stats.totalCoupons, Tags],
-                    ["Revenue", formatCurrency(stats.totalRevenue), BarChart3]
+                    ["Revenue", formatCurrency(stats.totalRevenue), BarChart3],
+                    ["Pending COD", stats.pendingManualOrders, CheckCircle2]
                   ].map(([label, value, Icon]) => (
                     <div key={label} className="stat-card">
                       <div className="flex items-center justify-between">
@@ -433,6 +449,98 @@ export default function AdminDashboardPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            ) : null}
+
+            {tab === "orders" ? (
+              <div className="glass-panel overflow-hidden">
+                <div className="flex flex-col gap-4 border-b border-white/10 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+                  <h2 className="text-2xl font-semibold text-white">COD / Manual payment requests</h2>
+                  <div className="flex flex-wrap gap-3">
+                    {["pending", "approved", "rejected", "all"].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setOrderFilter(value)}
+                        className={orderFilter === value ? "button-primary" : "button-secondary"}
+                      >
+                        {value[0].toUpperCase() + value.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-white/10 text-left">
+                    <thead className="bg-white/5 text-xs uppercase tracking-[0.22em] text-white/45">
+                      <tr>
+                        <th className="px-6 py-4">User</th>
+                        <th className="px-6 py-4">Wish</th>
+                        <th className="px-6 py-4">Preview</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                      {manualOrders.map((order) => (
+                        <tr key={order._id}>
+                          <td className="px-6 py-4">
+                            <p className="font-semibold text-white">{order.user?.name}</p>
+                            <p className="text-sm text-white/55">{order.user?.email}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="font-semibold text-white">{order.wish?.recipientName}</p>
+                            <p className="text-sm text-white/55">{order.wish?.templateId}</p>
+                            <p className="mt-2 line-clamp-2 max-w-xs text-sm text-white/55">{order.wish?.message || "No message"}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex gap-2">
+                              {(order.wish?.images || []).slice(0, 2).map((image) => (
+                                <img
+                                  key={image.url}
+                                  src={image.url}
+                                  alt={order.wish?.recipientName}
+                                  className="h-16 w-16 rounded-2xl object-cover"
+                                />
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-white/70">
+                            <p>{order.orderStatus}</p>
+                            <p className="text-sm text-white/45">{order.status}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            {order.orderStatus === "pending" ? (
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOrderDecision(order._id, "approve")}
+                                  className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm font-semibold text-emerald-200"
+                                >
+                                  <CheckCircle2 className="h-4 w-4" />
+                                  Approve
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const note = window.prompt("Reason for rejection (optional):", "") || "";
+                                    handleOrderDecision(order._id, "reject", note);
+                                  }}
+                                  className="inline-flex items-center gap-2 rounded-full border border-rose-300/20 bg-rose-300/10 px-4 py-2 text-sm font-semibold text-rose-200"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  Reject
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="max-w-xs text-sm text-white/55">{order.approvalNote || "No admin note"}</p>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             ) : null}

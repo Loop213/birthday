@@ -3,9 +3,10 @@ import User from "../models/User.js";
 import Wish from "../models/Wish.js";
 import Coupon from "../models/Coupon.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { approveManualOrder, rejectManualOrder } from "./paymentController.js";
 
 export const getDashboardSummary = asyncHandler(async (_req, res) => {
-  const [totalUsers, totalWishes, coupons, recentUsers, recentWishes, revenue] =
+  const [totalUsers, totalWishes, coupons, recentUsers, recentWishes, revenue, pendingManualOrders] =
     await Promise.all([
       User.countDocuments({ role: "user" }),
       Wish.countDocuments(),
@@ -20,7 +21,8 @@ export const getDashboardSummary = asyncHandler(async (_req, res) => {
             totalRevenue: { $sum: "$amount" }
           }
         }
-      ])
+      ]),
+      Payment.countDocuments({ provider: "cod", orderStatus: "pending" })
     ]);
 
   res.json({
@@ -30,7 +32,8 @@ export const getDashboardSummary = asyncHandler(async (_req, res) => {
         totalUsers,
         totalWishes,
         totalCoupons: coupons,
-        totalRevenue: revenue[0]?.totalRevenue || 0
+        totalRevenue: revenue[0]?.totalRevenue || 0,
+        pendingManualOrders
       },
       recentUsers,
       recentWishes
@@ -89,3 +92,30 @@ export const moderateWish = asyncHandler(async (req, res) => {
     data: wish
   });
 });
+
+export const getManualOrders = asyncHandler(async (req, res) => {
+  const filter = String(req.query.status || "all");
+  const query = { provider: "cod" };
+
+  if (filter !== "all") {
+    query.orderStatus = filter;
+  }
+
+  const orders = await Payment.find(query)
+    .populate("user", "name email")
+    .populate({
+      path: "wish",
+      populate: {
+        path: "owner",
+        select: "name email"
+      }
+    })
+    .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    data: orders
+  });
+});
+
+export { approveManualOrder, rejectManualOrder };

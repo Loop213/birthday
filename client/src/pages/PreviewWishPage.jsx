@@ -32,6 +32,7 @@ export default function PreviewWishPage() {
     discountAmount: 0,
     finalAmount: 1000
   });
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
@@ -91,12 +92,20 @@ export default function PreviewWishPage() {
     try {
       const response = await api.post("/payments/order", {
         wishId: wish._id,
-        couponCode
+        couponCode,
+        paymentMethod
       });
 
       const order = response.data.data.order;
       const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || response.data.data.keyId;
       setPricing(response.data.data.pricing);
+
+      if (order.provider === "cod") {
+        setWish(response.data.data.wish);
+        toast.success("Your request is sent. It will be approved within some time.");
+        await loadWish();
+        return;
+      }
 
       if (order.provider === "demo") {
         await verifyPayment({
@@ -221,6 +230,8 @@ export default function PreviewWishPage() {
                 onCouponCodeChange={setCouponCode}
                 onApplyCoupon={applyCoupon}
                 onPayNow={payNow}
+                paymentMethod={paymentMethod}
+                onPaymentMethodChange={setPaymentMethod}
                 processing={processing}
                 sharePassword={sharePassword}
                 onCopyLink={copyLink}

@@ -121,8 +121,22 @@ const wishSchema = new mongoose.Schema(
     },
     paymentStatus: {
       type: String,
-      enum: ["unpaid", "paid", "refunded"],
+      enum: ["unpaid", "pending", "paid", "failed", "refunded"],
       default: "unpaid"
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["razorpay", "demo", "cod"],
+      default: "demo"
+    },
+    orderStatus: {
+      type: String,
+      enum: ["draft", "pending", "approved", "rejected"],
+      default: "draft"
+    },
+    adminDecisionNote: {
+      type: String,
+      default: ""
     },
     priceBreakdown: {
       baseAmount: {

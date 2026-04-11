@@ -1,4 +1,5 @@
 import cron from "node-cron";
+import Payment from "../models/Payment.js";
 import Wish from "../models/Wish.js";
 import { sendWishCountdownEmail, sendWishDeliveryEmail } from "../services/emailService.js";
 import env from "../config/env.js";
@@ -73,12 +74,29 @@ async function expireWishes() {
   );
 }
 
+async function cleanupRejectedManualOrders() {
+  const threshold = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const rejectedPayments = await Payment.find({
+    provider: "cod",
+    orderStatus: "rejected",
+    updatedAt: { $lte: threshold }
+  }).select("wish");
+
+  const wishIds = rejectedPayments.map((payment) => payment.wish);
+
+  if (wishIds.length) {
+    await Wish.deleteMany({ _id: { $in: wishIds }, orderStatus: "rejected" });
+    await Payment.deleteMany({ _id: { $in: rejectedPayments.map((payment) => payment._id) } });
+  }
+}
+
 export function startWishScheduler() {
   cron.schedule("* * * * *", async () => {
     try {
       await sendUpcomingWishReminders();
       await activateScheduledWishes();
       await expireWishes();
+      await cleanupRejectedManualOrders();
     } catch (error) {
       console.error("Wish scheduler failed", error);
     }

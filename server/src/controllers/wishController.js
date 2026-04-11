@@ -245,7 +245,10 @@ export const getWishPublicMeta = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    data: wish
+    data: {
+      ...wish.toObject(),
+      approvalState: wish.orderStatus
+    }
   });
 });
 
@@ -255,6 +258,14 @@ export const accessWish = asyncHandler(async (req, res) => {
 
   if (!wish) {
     throw new AppError("Wish page not found.", 404);
+  }
+
+  if (wish.orderStatus === "pending") {
+    throw new AppError("This birthday wish is waiting for admin approval.", 403);
+  }
+
+  if (wish.orderStatus === "rejected" || wish.paymentStatus === "failed") {
+    throw new AppError("This birthday wish request was rejected.", 403);
   }
 
   if (wish.expiresAt && wish.expiresAt <= new Date()) {

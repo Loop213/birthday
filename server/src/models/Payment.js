@@ -14,7 +14,7 @@ const paymentSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      enum: ["demo", "razorpay"],
+      enum: ["demo", "razorpay", "cod"],
       required: true
     },
     orderId: {
@@ -39,8 +39,17 @@ const paymentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["created", "paid", "failed", "refunded"],
+      enum: ["created", "pending", "paid", "failed", "refunded", "rejected"],
       default: "created"
+    },
+    orderStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending"
+    },
+    approvalNote: {
+      type: String,
+      default: ""
     },
     couponCode: {
       type: String,

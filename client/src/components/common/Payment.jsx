@@ -23,6 +23,8 @@ export default function Payment({
   onCouponCodeChange,
   onApplyCoupon,
   onPayNow,
+  paymentMethod,
+  onPaymentMethodChange,
   processing,
   sharePassword,
   onCopyLink,
@@ -42,6 +44,38 @@ export default function Payment({
         </p>
 
         <div className="mt-6 space-y-3">
+          <div className="space-y-3">
+            <span className="field-label">Payment method</span>
+            <div className="grid gap-3">
+              {[
+                {
+                  value: "razorpay",
+                  label: "Online Payment",
+                  description: "Pay instantly with Razorpay and activate the wish immediately."
+                },
+                {
+                  value: "cod",
+                  label: "COD / Manual Payment",
+                  description: "Send the request for admin approval before the link becomes active."
+                }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onPaymentMethodChange(option.value)}
+                  className={`rounded-[1.5rem] border p-4 text-left transition ${
+                    paymentMethod === option.value
+                      ? "border-cyan-300/40 bg-cyan-300/10 shadow-glow"
+                      : "border-white/10 bg-white/5 hover:bg-white/8"
+                  }`}
+                >
+                  <p className="font-semibold text-white">{option.label}</p>
+                  <p className="mt-2 text-sm text-white/60">{option.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="space-y-2">
             <span className="field-label">Coupon code</span>
             <div className="flex gap-3">
@@ -81,14 +115,18 @@ export default function Payment({
         <button
           type="button"
           onClick={onPayNow}
-          disabled={processing || wish?.paymentStatus === "paid"}
+          disabled={processing || wish?.paymentStatus === "paid" || wish?.orderStatus === "pending"}
           className="button-primary mt-6 w-full justify-center"
         >
           {wish?.paymentStatus === "paid"
             ? "Already Published"
+            : wish?.orderStatus === "pending"
+              ? "Waiting For Admin Approval"
             : processing
               ? "Processing..."
-              : `Pay ${formatCurrency(pricing.finalAmount)}`}
+              : paymentMethod === "cod"
+                ? "Place COD Request"
+                : `Pay ${formatCurrency(pricing.finalAmount)}`}
         </button>
       </div>
 
@@ -126,6 +164,14 @@ export default function Payment({
                 </button>
               </div>
             </>
+          ) : wish?.orderStatus === "pending" ? (
+            <p className="mt-3 text-sm text-white/55">
+              Your COD/manual payment request has been sent to admin. The wish will activate only after approval.
+            </p>
+          ) : wish?.orderStatus === "rejected" ? (
+            <p className="mt-3 text-sm text-rose-200/80">
+              This manual payment request was rejected. Create a new request or switch to online payment.
+            </p>
           ) : (
             <p className="mt-3 text-sm text-white/55">
               The URL is reserved now, but it will stay locked until the ₹10 payment is verified.

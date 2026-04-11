@@ -95,3 +95,73 @@ export async function sendWishCountdownEmail({
 
   return { sent: true, mode: "smtp" };
 }
+
+export async function sendManualApprovalEmail({
+  recipientEmail,
+  recipientName,
+  shareUrl,
+  accessPassword
+}) {
+  if (!recipientEmail) {
+    return { sent: false, mode: "skipped" };
+  }
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; background: #070b1a; color: white; padding: 32px;">
+      <h2 style="margin-top: 0;">Your birthday wish request has been approved</h2>
+      <p>Hi ${recipientName},</p>
+      <p>Your manual payment request has been approved by our team.</p>
+      <p><strong>Open link:</strong> <a href="${shareUrl}" style="color:#7dd3fc;">${shareUrl}</a></p>
+      <p><strong>Password:</strong> ${accessPassword}</p>
+      <p>The wish page stays active according to its scheduled activation and expiry settings.</p>
+    </div>
+  `;
+
+  if (!transporter) {
+    console.log("Manual approval email preview", { recipientEmail, shareUrl, accessPassword });
+    return { sent: false, mode: "console" };
+  }
+
+  await transporter.sendMail({
+    from: env.smtpFrom,
+    to: recipientEmail,
+    subject: "Your birthday wish request is approved",
+    html
+  });
+
+  return { sent: true, mode: "smtp" };
+}
+
+export async function sendManualRejectionEmail({
+  recipientEmail,
+  recipientName,
+  reason = ""
+}) {
+  if (!recipientEmail) {
+    return { sent: false, mode: "skipped" };
+  }
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; background: #070b1a; color: white; padding: 32px;">
+      <h2 style="margin-top: 0;">Your birthday wish request was not approved</h2>
+      <p>Hi ${recipientName},</p>
+      <p>Your manual payment request has been reviewed and was rejected by our team.</p>
+      <p><strong>Reason:</strong> ${reason || "No reason provided."}</p>
+      <p>You can create a new request anytime from your dashboard.</p>
+    </div>
+  `;
+
+  if (!transporter) {
+    console.log("Manual rejection email preview", { recipientEmail, reason });
+    return { sent: false, mode: "console" };
+  }
+
+  await transporter.sendMail({
+    from: env.smtpFrom,
+    to: recipientEmail,
+    subject: "Your birthday wish request was rejected",
+    html
+  });
+
+  return { sent: true, mode: "smtp" };
+}
