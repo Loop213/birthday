@@ -60,7 +60,9 @@ export const createWish = asyncHandler(async (req, res) => {
     timezone,
     accessPassword,
     musicMode,
-    musicPreset
+    musicPreset,
+    photoFrameStyle,
+    photoTransition
   } = req.body;
 
   if (!recipientName || !relation || !accessPassword) {
@@ -92,6 +94,8 @@ export const createWish = asyncHandler(async (req, res) => {
     timezone: selectedTimezone,
     accessPasswordHash: await hashValue(accessPassword),
     images,
+    photoFrameStyle: photoFrameStyle || "romantic",
+    photoTransition: photoTransition || "fade",
     music: musicMode === "upload" && musicAsset
       ? {
           type: "upload",
@@ -136,7 +140,9 @@ export const updateWish = asyncHandler(async (req, res) => {
     accessPassword,
     musicMode,
     musicPreset,
-    keepExistingImages
+    keepExistingImages,
+    photoFrameStyle,
+    photoTransition
   } = req.body;
 
   const { images, musicAsset, voiceAsset } = await extractWishAssets(req.files);
@@ -160,6 +166,8 @@ export const updateWish = asyncHandler(async (req, res) => {
   wish.recipientPhone = recipientPhone ?? wish.recipientPhone;
   wish.timezone = selectedTimezone;
   wish.images = retainImages ? [...wish.images, ...images] : images.length ? images : wish.images;
+  wish.photoFrameStyle = photoFrameStyle || wish.photoFrameStyle;
+  wish.photoTransition = photoTransition || wish.photoTransition;
 
   if (wish.deliveryMode === "scheduled" && !wish.scheduleAt) {
     throw new AppError("Please choose a birthday schedule date for auto-send.", 400);

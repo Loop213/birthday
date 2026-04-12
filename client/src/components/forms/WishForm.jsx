@@ -2,6 +2,36 @@ import { useEffect, useRef, useState } from "react";
 import { musicPresets, relations } from "../../data/options.js";
 import { getBirthdayTemplate } from "../../data/templates.js";
 
+const PHOTO_FRAME_STYLES = [
+  {
+    value: "romantic",
+    label: "Romantic",
+    description: "Soft blush glow with dreamy rounded borders."
+  },
+  {
+    value: "birthday",
+    label: "Birthday",
+    description: "Festive color pop for celebration-heavy memories."
+  },
+  {
+    value: "neon",
+    label: "Neon",
+    description: "Bright glow edges for a modern premium story."
+  },
+  {
+    value: "classic",
+    label: "Classic",
+    description: "Clean elegant frame with timeless styling."
+  }
+];
+
+const PHOTO_TRANSITIONS = [
+  { value: "fade", label: "Fade" },
+  { value: "slide", label: "Slide" },
+  { value: "zoom", label: "Zoom" },
+  { value: "flip", label: "Flip" }
+];
+
 function buildDefaultForm(templateId) {
   const template = getBirthdayTemplate(templateId);
 
@@ -17,7 +47,9 @@ function buildDefaultForm(templateId) {
     recipientPhone: "",
     timezone: "Asia/Kolkata",
     musicMode: "preset",
-    musicPreset: template.defaultMusicPreset
+    musicPreset: template.defaultMusicPreset,
+    photoFrameStyle: "romantic",
+    photoTransition: "fade"
   };
 }
 
@@ -28,6 +60,8 @@ export default function WishForm({
 }) {
   const [form, setForm] = useState(() => buildDefaultForm(selectedTemplateId));
   const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [musicUpload, setMusicUpload] = useState(null);
   const [voiceMessage, setVoiceMessage] = useState(null);
   const submitIntentRef = useRef("preview");
@@ -49,13 +83,65 @@ export default function WishForm({
     }));
   }, [selectedTemplate.defaultMusicPreset, selectedTemplateId]);
 
+  useEffect(() => {
+    setPreviewIndex(0);
+  }, [imagePreviews.length]);
+
+  useEffect(() => () => {
+    imagePreviews.forEach((preview) => URL.revokeObjectURL(preview.previewUrl));
+  }, [imagePreviews]);
+
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
   }
 
+  function handleImageSelection(event) {
+    const nextFiles = Array.from(event.target.files || []).slice(0, 6);
+
+    imagePreviews.forEach((preview) => URL.revokeObjectURL(preview.previewUrl));
+
+    setImages(nextFiles);
+    setImagePreviews(
+      nextFiles.map((file, index) => ({
+        id: `${file.name}-${index}-${file.lastModified}`,
+        name: file.name,
+        previewUrl: URL.createObjectURL(file)
+      }))
+    );
+  }
+
+  function moveImage(fromIndex, direction) {
+    const toIndex = fromIndex + direction;
+
+    if (toIndex < 0 || toIndex >= images.length) {
+      return;
+    }
+
+    setImages((current) => {
+      const next = [...current];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, item);
+      return next;
+    });
+
+    setImagePreviews((current) => {
+      const next = [...current];
+      const [item] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, item);
+      return next;
+    });
+
+    setPreviewIndex(toIndex);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (images.length < 3 || images.length > 6) {
+      return;
+    }
+
     const payload = new FormData();
 
     payload.append("templateId", selectedTemplateId);
@@ -276,17 +362,135 @@ export default function WishForm({
           <div>
             <p className="field-label">Memory Gallery</p>
             <p className="mt-1 text-sm text-white/55">
-              Upload up to 6 images. Family and romantic scenes especially shine with photo textures.
+              Upload 3 to 6 images, choose a frame style, pick a transition, and arrange the story order before generating the URL.
             </p>
           </div>
           <input
             type="file"
             accept="image/*"
             multiple
-            onChange={(event) => setImages(Array.from(event.target.files || []))}
+            onChange={handleImageSelection}
             className="field-input file:mr-4 file:rounded-full file:border-0 file:bg-cyan-300/15 file:px-4 file:py-2 file:text-sm file:text-cyan-100"
           />
-          <p className="text-sm text-white/55">{images.length} image(s) selected</p>
+          <p className={`text-sm ${images.length >= 3 && images.length <= 6 ? "text-emerald-200/80" : "text-amber-200/80"}`}>
+            {images.length} image(s) selected. Minimum 3 and maximum 6 required.
+          </p>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="field-label">Photo Frame Style</span>
+              <select
+                name="photoFrameStyle"
+                value={form.photoFrameStyle}
+                onChange={updateField}
+                className="field-input"
+              >
+                {PHOTO_FRAME_STYLES.map((style) => (
+                  <option key={style.value} value={style.value}>
+                    {style.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-white/45">
+                {PHOTO_FRAME_STYLES.find((style) => style.value === form.photoFrameStyle)?.description}
+              </p>
+            </label>
+
+            <label className="space-y-2">
+              <span className="field-label">Photo Transition</span>
+              <select
+                name="photoTransition"
+                value={form.photoTransition}
+                onChange={updateField}
+                className="field-input"
+              >
+                {PHOTO_TRANSITIONS.map((transition) => (
+                  <option key={transition.value} value={transition.value}>
+                    {transition.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {imagePreviews.length ? (
+            <div className="space-y-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-white">Slideshow Preview</p>
+                <div className="flex gap-2">
+                  {imagePreviews.map((preview, index) => (
+                    <button
+                      key={preview.id}
+                      type="button"
+                      onClick={() => setPreviewIndex(index)}
+                      className={`h-2.5 rounded-full transition-all ${
+                        index === previewIndex ? "w-8 bg-cyan-200" : "w-2.5 bg-white/25"
+                      }`}
+                      aria-label={`Preview photo ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950/55">
+                <img
+                  src={imagePreviews[previewIndex]?.previewUrl}
+                  alt={imagePreviews[previewIndex]?.name || "Selected preview"}
+                  className={`h-64 w-full object-cover ${
+                    form.photoTransition === "zoom"
+                      ? "transition duration-500 hover:scale-105"
+                      : form.photoTransition === "flip"
+                        ? "transition duration-500 [transform:perspective(1000px)_rotateY(0deg)] hover:[transform:perspective(1000px)_rotateY(10deg)]"
+                        : "transition duration-500"
+                  }`}
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {imagePreviews.map((preview, index) => (
+                  <div
+                    key={preview.id}
+                    className={`rounded-[1.2rem] border p-3 ${
+                      index === previewIndex ? "border-cyan-300/40 bg-cyan-300/10" : "border-white/10 bg-slate-950/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={preview.previewUrl}
+                        alt={preview.name}
+                        className="h-14 w-14 rounded-xl object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">{preview.name}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.24em] text-white/45">
+                          Slide {index + 1}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, -1)}
+                        disabled={index === 0}
+                        className="button-secondary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Move Up
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveImage(index, 1)}
+                        disabled={index === imagePreviews.length - 1}
+                        className="button-secondary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Move Down
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="glass-panel space-y-4 p-5">
@@ -367,8 +571,8 @@ export default function WishForm({
             onClick={() => {
               submitIntentRef.current = "dashboard";
             }}
-            disabled={submitting}
-            className="button-secondary justify-center"
+            disabled={submitting || images.length < 3 || images.length > 6}
+            className="button-secondary justify-center disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Saving..." : "Save Draft"}
           </button>
@@ -377,8 +581,8 @@ export default function WishForm({
             onClick={() => {
               submitIntentRef.current = "preview";
             }}
-            disabled={submitting}
-            className="button-primary justify-center"
+            disabled={submitting || images.length < 3 || images.length > 6}
+            className="button-primary justify-center disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Saving..." : "Save & Preview"}
           </button>

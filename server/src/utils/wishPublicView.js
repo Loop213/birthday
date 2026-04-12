@@ -8,6 +8,8 @@ export function getPublicWishPayload(wish) {
     shayari: wish.shayari,
     theme: wish.theme,
     images: wish.images,
+    photoFrameStyle: wish.photoFrameStyle,
+    photoTransition: wish.photoTransition,
     music: wish.music,
     voiceMessage: wish.voiceMessage,
     shareSlug: wish.shareSlug,

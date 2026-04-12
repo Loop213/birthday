@@ -1,38 +1,28 @@
 import {
-  ChevronUp,
   Expand,
   Globe,
   Instagram,
-  Linkedin,
-  Mail,
+  LoaderCircle,
   Minimize2,
-  Music4,
   RotateCcw,
   Volume2,
   VolumeX
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import confetti from "canvas-confetti";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { musicPresets } from "../../data/options.js";
+import { defaultGalleryImages } from "../../data/defaultGallery.js";
 import MagicLetterScene from "../three/MagicLetterScene.jsx";
 import Preview3D from "../three/Preview3D.jsx";
-import AudioControlBar from "./AudioControlBar.jsx";
-import { defaultGalleryImages } from "../../data/defaultGallery.js";
-import { getBirthdayTemplate } from "../../data/templates.js";
 import { playPaperOpenSound } from "../../utils/soundEffects.js";
 
 const STORY_STAGES = {
+  LOADING: "loading",
   LETTER: "letter",
   SHAYARI: "shayari",
   MESSAGE: "message",
   PHOTOS: "photos",
-  CELEBRATION: "celebration"
-};
-
-const STAGE_TIMINGS = {
-  shayari: 36000,
-  message: 7000,
-  photos: 9000
+  FINALE: "finale"
 };
 
 const STAGE_SEQUENCE = [
@@ -40,30 +30,52 @@ const STAGE_SEQUENCE = [
   STORY_STAGES.SHAYARI,
   STORY_STAGES.MESSAGE,
   STORY_STAGES.PHOTOS,
-  STORY_STAGES.CELEBRATION
+  STORY_STAGES.FINALE
 ];
+
+function splitLongText(text) {
+  const clean = (text || "").trim();
+
+  if (!clean) {
+    return [];
+  }
+
+  const byLine = clean
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (byLine.length > 1) {
+    return byLine;
+  }
+
+  return clean
+    .split(/(?<=[.!?।])/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
 
 function FloatingBackdrop() {
   const particles = useMemo(
     () =>
-      Array.from({ length: 44 }, (_, index) => ({
+      Array.from({ length: 38 }, (_, index) => ({
         id: index,
-        size: 3 + (index % 6) * 6,
-        left: `${(index * 7.7) % 100}%`,
-        top: `${(index * 11.4) % 100}%`,
-        duration: 7 + (index % 7),
-        delay: index * 0.12
+        size: 4 + (index % 5) * 5,
+        left: `${(index * 8.4) % 100}%`,
+        top: `${(index * 11.2) % 100}%`,
+        duration: 7 + (index % 6),
+        delay: index * 0.14
       })),
     []
   );
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#8b5cf633,transparent_26%),radial-gradient(circle_at_80%_10%,#ec489944,transparent_24%),radial-gradient(circle_at_bottom,#38bdf833,transparent_32%),linear-gradient(135deg,#02040d,#10081e,#071326)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#8b5cf633,transparent_24%),radial-gradient(circle_at_75%_10%,#ec489944,transparent_24%),radial-gradient(circle_at_bottom,#38bdf833,transparent_32%),linear-gradient(145deg,#02030d,#10081d,#071426)]" />
       {particles.map((particle) => (
         <motion.span
           key={particle.id}
-          className="absolute rounded-full bg-white/30 blur-[1px]"
+          className="absolute rounded-full bg-white/25 blur-[1px]"
           style={{
             width: particle.size,
             height: particle.size,
@@ -71,10 +83,9 @@ function FloatingBackdrop() {
             top: particle.top
           }}
           animate={{
+            y: [0, -28, 0],
             x: [0, particle.id % 2 === 0 ? 18 : -18, 0],
-            y: [0, -40, 0],
-            opacity: [0.15, 0.8, 0.15],
-            scale: [0.8, 1.15, 0.8]
+            opacity: [0.14, 0.72, 0.14]
           }}
           transition={{
             repeat: Infinity,
@@ -88,298 +99,293 @@ function FloatingBackdrop() {
   );
 }
 
-function splitShayari(shayari) {
-  const clean = (shayari || "").trim();
-
-  if (!clean) {
-    return [
-      "Har dua me tera naam saja rehta hai,",
-      "har khushi me tera hi chehra dikhta hai.",
-      "Aaj ke din bas itni si tamanna hai,",
-      "tera har birthday pyaar se chamakta rahe."
-    ];
-  }
-
-  const newlineLines = clean
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (newlineLines.length > 1) {
-    return newlineLines.slice(0, 6);
-  }
-
-  const sentenceLines = clean
-    .split(/(?<=[.!?।])/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (sentenceLines.length > 1) {
-    return sentenceLines.slice(0, 6);
-  }
-
-  const words = clean.split(/\s+/);
-  const chunkSize = Math.max(5, Math.ceil(words.length / 4));
-  const chunks = [];
-
-  for (let index = 0; index < words.length; index += chunkSize) {
-    chunks.push(words.slice(index, index + chunkSize).join(" "));
-  }
-
-  return chunks.slice(0, 6);
-}
-
-function TypewriterLines({ lines, active, duration = STAGE_TIMINGS.shayari }) {
-  const [displayed, setDisplayed] = useState(() => lines.map(() => ""));
-  const [cursorLine, setCursorLine] = useState(0);
-
-  useEffect(() => {
-    setDisplayed(lines.map(() => ""));
-    setCursorLine(0);
-  }, [lines]);
-
-  useEffect(() => {
-    if (!active || !lines.length) {
-      setDisplayed(lines.map(() => ""));
-      setCursorLine(0);
-      return undefined;
-    }
-
-    const totalCharacters = lines.join("").length || 1;
-    const msPerCharacter = Math.max(42, Math.floor(duration / totalCharacters));
-    let lineIndex = 0;
-    let charIndex = 0;
-
-    const timer = window.setInterval(() => {
-      setDisplayed((current) => {
-        const next = [...current];
-        const line = lines[lineIndex] || "";
-        next[lineIndex] = line.slice(0, charIndex + 1);
-        return next;
-      });
-
-      charIndex += 1;
-      setCursorLine(lineIndex);
-
-      if (charIndex >= (lines[lineIndex] || "").length) {
-        lineIndex += 1;
-        charIndex = 0;
-        setCursorLine((current) => Math.min(current + 1, lines.length - 1));
-      }
-
-      if (lineIndex >= lines.length) {
-        window.clearInterval(timer);
-      }
-    }, msPerCharacter);
-
-    return () => window.clearInterval(timer);
-  }, [active, duration, lines]);
+function ProgressRail({ stage }) {
+  const labels = {
+    [STORY_STAGES.LETTER]: "Arrival",
+    [STORY_STAGES.SHAYARI]: "Shayari",
+    [STORY_STAGES.MESSAGE]: "Message",
+    [STORY_STAGES.PHOTOS]: "Memories",
+    [STORY_STAGES.FINALE]: "Gift"
+  };
+  const currentIndex = STAGE_SEQUENCE.indexOf(stage);
 
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {lines.map((line, index) => {
-        const hasCursor = active && cursorLine === index && displayed[index] !== line;
-        const revealed = displayed[index];
-
-        return (
-          <motion.p
-            key={`${index}-${line}`}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: revealed ? 1 : 0.2, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-lg italic leading-[1.95] text-rose-50/95 drop-shadow-[0_0_18px_rgba(244,114,182,0.3)] sm:text-2xl lg:text-3xl"
-          >
-            {revealed}
-            {hasCursor ? (
-              <span className="ml-2 inline-block h-6 w-1 animate-pulse rounded-full bg-cyan-200 align-middle shadow-[0_0_16px_rgba(103,232,249,0.85)]" />
-            ) : null}
-          </motion.p>
-        );
-      })}
-    </div>
-  );
-}
-
-function FinaleMessage({ title, caption, active }) {
-  const [displayTitle, setDisplayTitle] = useState("");
-  const [displayCaption, setDisplayCaption] = useState("");
-
-  useEffect(() => {
-    if (!active) {
-      setDisplayTitle("");
-      setDisplayCaption("");
-      return undefined;
-    }
-
-    let titleIndex = 0;
-    let captionIndex = 0;
-    let captionTimer;
-
-    const titleTimer = window.setInterval(() => {
-      titleIndex += 1;
-      setDisplayTitle(title.slice(0, titleIndex));
-
-      if (titleIndex >= title.length) {
-        window.clearInterval(titleTimer);
-
-        captionTimer = window.setInterval(() => {
-          captionIndex += 1;
-          setDisplayCaption(caption.slice(0, captionIndex));
-
-          if (captionIndex >= caption.length) {
-            window.clearInterval(captionTimer);
-          }
-        }, 24);
-      }
-    }, 36);
-
-    return () => {
-      window.clearInterval(titleTimer);
-      if (captionTimer) {
-        window.clearInterval(captionTimer);
-      }
-    };
-  }, [active, caption, title]);
-
-  return (
-    <motion.div
-      animate={{ y: [0, -6, 0], opacity: [0.92, 1, 0.92] }}
-      transition={{ repeat: Infinity, duration: 4.8, ease: "easeInOut" }}
-    >
-      <h3 className="mt-3 text-2xl font-semibold leading-tight text-white drop-shadow-[0_0_26px_rgba(244,114,182,0.24)] sm:text-4xl">
-        {displayTitle}
-        {displayTitle.length < title.length ? (
-          <span className="ml-2 inline-block h-6 w-1 animate-pulse rounded-full bg-cyan-200 align-middle" />
-        ) : null}
-      </h3>
-      <p className="mt-4 max-w-lg text-base leading-7 text-white/72 sm:text-lg">
-        {displayCaption}
-      </p>
-    </motion.div>
-  );
-}
-
-function FloatingPhotos({ images, recipientName, active }) {
-  const placements = useMemo(
-    () =>
-      images.map((image, index) => ({
-        ...image,
-        id: `${image.url}-${index}`,
-        top: 8 + ((index * 13) % 68),
-        left: 4 + ((index * 17) % 72),
-        rotate: (index % 2 === 0 ? -1 : 1) * (6 + index * 1.8),
-        width: 220 + (index % 3) * 36,
-        delay: index * 0.45,
-        duration: 7 + (index % 4)
-      })),
-    [images]
-  );
-
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      {placements.map((image, index) => (
-        <motion.div
-          key={image.id}
-          initial={{ opacity: 0, scale: 0.72, x: index % 2 === 0 ? -140 : 140, y: 80 }}
-          animate={
-            active
-              ? {
-                  opacity: 1,
-                  scale: [1, 1.08, 1],
-                  x: [0, index % 2 === 0 ? 32 : -32, 0],
-                  y: [0, -24, 10, 0],
-                  rotate: [image.rotate, image.rotate + 2.5, image.rotate]
-                }
-              : { opacity: 0 }
-          }
-          transition={{
-            opacity: { duration: 0.7, delay: image.delay },
-            default: {
-              repeat: Infinity,
-              duration: image.duration,
-              ease: "easeInOut",
-              delay: image.delay
-            }
-          }}
-          className="absolute"
-          style={{
-            top: `${image.top}%`,
-            left: `${image.left}%`,
-            width: `${image.width}px`
-          }}
-        >
-          <div className="group overflow-hidden rounded-[2rem] border border-white/20 bg-white/10 p-2 shadow-[0_0_40px_rgba(168,85,247,0.25)] backdrop-blur-xl">
-            <img
-              src={image.url}
-              alt={`${recipientName} memory ${index + 1}`}
-            className="h-52 w-full rounded-[1.5rem] object-cover opacity-90 blur-[0.2px] transition duration-700 group-hover:scale-110 group-hover:opacity-100"
+    <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/38 px-4 py-4 backdrop-blur-xl">
+      <p className="text-[11px] uppercase tracking-[0.32em] text-white/45">Story Flow</p>
+      <div className="mt-4 flex flex-col gap-2">
+        {STAGE_SEQUENCE.map((stageName, index) => (
+          <div key={stageName} className="flex items-center gap-3">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                index <= currentIndex ? "bg-cyan-200 shadow-[0_0_14px_rgba(103,232,249,0.8)]" : "bg-white/18"
+              }`}
             />
+            <span className={`text-sm ${index === currentIndex ? "text-white" : "text-white/45"}`}>
+              {labels[stageName]}
+            </span>
           </div>
-        </motion.div>
-      ))}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(2,6,23,0.45)_70%,rgba(2,6,23,0.85)_100%)]" />
-    </div>
-  );
-}
-
-function FooterBranding() {
-  const links = [
-    { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-    { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-    { icon: Mail, href: "mailto:hello@ballwish.com", label: "Gmail" },
-    { icon: Globe, href: "https://ballwish.com", label: "Website" }
-  ];
-
-  return (
-    <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/45 px-4 py-2 backdrop-blur-xl">
-      <span className="text-xs uppercase tracking-[0.28em] text-white/55">BALL</span>
-      <span className="hidden text-sm text-white/55 sm:inline">Made with ❤️ by BALL</span>
-      <div className="ml-1 flex items-center gap-2">
-        {links.map(({ icon: Icon, href, label }) => (
-          <a
-            key={label}
-            href={href}
-            target={href.startsWith("mailto:") ? undefined : "_blank"}
-            rel={href.startsWith("mailto:") ? undefined : "noreferrer"}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white/70 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-cyan-100 hover:shadow-glow"
-            aria-label={label}
-          >
-            <Icon className="h-4 w-4" />
-          </a>
         ))}
       </div>
     </div>
   );
 }
 
-export default function CinematicWishExperience({ wish, shareUrl = "" }) {
+function RevealParagraphs({ paragraphs, active, maxCollapsed = 4 }) {
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setVisibleCount(0);
+      setExpanded(false);
+      return undefined;
+    }
+
+    let index = 0;
+    const timer = window.setInterval(() => {
+      index += 1;
+      setVisibleCount(index);
+
+      if (index >= paragraphs.length) {
+        window.clearInterval(timer);
+      }
+    }, 350);
+
+    return () => window.clearInterval(timer);
+  }, [active, paragraphs]);
+
+  const shownParagraphs = expanded
+    ? paragraphs.slice(0, visibleCount)
+    : paragraphs.slice(0, Math.min(visibleCount, maxCollapsed));
+  const hiddenCount = Math.max(paragraphs.length - maxCollapsed, 0);
+
+  return (
+    <div className="space-y-4">
+      {shownParagraphs.map((paragraph, index) => (
+        <motion.p
+          key={`${index}-${paragraph}`}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="text-base leading-8 text-white/78 sm:text-lg"
+        >
+          {paragraph}
+        </motion.p>
+      ))}
+
+      {!expanded && hiddenCount > 0 && visibleCount >= maxCollapsed ? (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-sm text-cyan-100 transition hover:bg-white/10"
+        >
+          Read More
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function getFrameClass(frameStyle) {
+  switch (frameStyle) {
+    case "birthday":
+      return "border-amber-300/40 bg-gradient-to-br from-amber-300/12 to-fuchsia-300/12 shadow-[0_0_38px_rgba(251,191,36,0.16)]";
+    case "neon":
+      return "border-cyan-300/45 bg-gradient-to-br from-cyan-300/12 to-fuchsia-400/12 shadow-[0_0_40px_rgba(34,211,238,0.18)]";
+    case "classic":
+      return "border-white/20 bg-slate-950/45 shadow-[0_0_24px_rgba(255,255,255,0.08)]";
+    default:
+      return "border-rose-300/30 bg-gradient-to-br from-rose-300/10 to-violet-300/10 shadow-[0_0_36px_rgba(244,114,182,0.16)]";
+  }
+}
+
+function getPhotoAnimation(transition) {
+  switch (transition) {
+    case "slide":
+      return {
+        initial: { opacity: 0, x: 80 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -80 }
+      };
+    case "zoom":
+      return {
+        initial: { opacity: 0, scale: 0.88 },
+        animate: { opacity: 1, scale: 1 },
+        exit: { opacity: 0, scale: 1.08 }
+      };
+    case "flip":
+      return {
+        initial: { opacity: 0, rotateY: -80, scale: 0.94 },
+        animate: { opacity: 1, rotateY: 0, scale: 1 },
+        exit: { opacity: 0, rotateY: 80, scale: 0.94 }
+      };
+    default:
+      return {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 }
+      };
+  }
+}
+
+function PhotoStage({ images, frameStyle, transition, recipientName, photoIndex, setPhotoIndex }) {
+  const animation = getPhotoAnimation(transition);
+
+  return (
+    <div className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="rounded-[2rem] border border-white/12 bg-slate-950/30 p-6 backdrop-blur-xl">
+        <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/55">Memory Slideshow</p>
+        <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+          Har photo me ek naya emotion chhupa hai
+        </h2>
+        <p className="mt-4 text-white/65">
+          Tap through the memories in the exact order chosen while creating the surprise.
+        </p>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setPhotoIndex((current) => (current - 1 + images.length) % images.length)}
+            className="button-secondary"
+          >
+            Previous Photo
+          </button>
+          <button
+            type="button"
+            onClick={() => setPhotoIndex((current) => (current + 1) % images.length)}
+            className="button-secondary"
+          >
+            Next Photo
+          </button>
+        </div>
+
+        <div className="mt-6 flex gap-2">
+          {images.map((image, index) => (
+            <button
+              key={`${image.url}-${index}`}
+              type="button"
+              onClick={() => setPhotoIndex(index)}
+              className={`h-2.5 rounded-full transition-all ${
+                photoIndex === index ? "w-10 bg-cyan-200" : "w-2.5 bg-white/25"
+              }`}
+              aria-label={`Open photo ${index + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className={`relative overflow-hidden rounded-[2rem] border p-3 backdrop-blur-xl ${getFrameClass(frameStyle)}`}>
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={images[photoIndex]?.url}
+            src={images[photoIndex]?.url}
+            alt={`${recipientName} memory ${photoIndex + 1}`}
+            {...animation}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="h-[340px] w-full rounded-[1.5rem] object-cover sm:h-[420px]"
+          />
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function GiftRevealBox({ open, onOpen }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onOpen}
+      animate={open ? { scale: 1.04 } : { y: [0, -10, 0], rotateZ: [0, -1, 1, 0] }}
+      transition={open ? { duration: 0.35 } : { repeat: Infinity, duration: 4.4, ease: "easeInOut" }}
+      className="group relative mx-auto block h-72 w-72 bg-transparent [perspective:1100px] sm:h-80 sm:w-80"
+    >
+      <div className="absolute inset-0 rounded-[2.4rem] bg-[radial-gradient(circle_at_top,#ffffff22,transparent_60%)] blur-2xl" />
+      <div className="absolute inset-0 [transform-style:preserve-3d]">
+        <motion.div
+          animate={open ? { rotateX: -128, y: -36 } : { rotateX: 0 }}
+          transition={{ duration: 0.9, ease: [0.23, 1, 0.32, 1] }}
+          className="absolute left-6 right-6 top-2 h-24 origin-bottom rounded-[1.8rem] border border-fuchsia-300/35 bg-gradient-to-b from-fuchsia-300/45 to-rose-400/25 shadow-[0_18px_60px_rgba(244,114,182,0.25)]"
+        >
+          <div className="absolute inset-x-12 top-9 h-5 rounded-full bg-cyan-100/70 blur-sm" />
+        </motion.div>
+
+        <div className="absolute inset-x-0 bottom-0 top-16 rounded-[2.4rem] border border-cyan-300/30 bg-gradient-to-br from-cyan-300/18 via-violet-300/18 to-fuchsia-300/18 shadow-[0_24px_70px_rgba(34,211,238,0.18)] backdrop-blur-xl" />
+        <div className="absolute left-1/2 top-16 h-[calc(100%-4rem)] w-5 -translate-x-1/2 rounded-full bg-cyan-100/55" />
+        <div className="absolute left-4 right-4 top-[46%] h-5 -translate-y-1/2 rounded-full bg-cyan-100/55" />
+
+        {!open ? (
+          <div className="absolute inset-x-0 bottom-8 text-center">
+            <p className="text-sm uppercase tracking-[0.35em] text-white/72">Tap the gift to open</p>
+          </div>
+        ) : null}
+      </div>
+    </motion.button>
+  );
+}
+
+function FooterLinks() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-white/65">
+      <a
+        href="https://ballwish.com"
+        target="_blank"
+        rel="noreferrer"
+        className="rounded-full border border-white/10 bg-white/6 px-4 py-2 transition hover:border-cyan-300/35 hover:text-cyan-100"
+      >
+        <Globe className="mr-2 inline h-4 w-4" />
+        ballwish.com
+      </a>
+      <a
+        href="https://instagram.com"
+        target="_blank"
+        rel="noreferrer"
+        className="rounded-full border border-white/10 bg-white/6 px-4 py-2 transition hover:border-cyan-300/35 hover:text-cyan-100"
+      >
+        <Instagram className="mr-2 inline h-4 w-4" />
+        Instagram
+      </a>
+    </div>
+  );
+}
+
+export default function CinematicWishExperience({ wish }) {
   const containerRef = useRef(null);
-  const template = getBirthdayTemplate(wish?.templateId);
+  const storyAudioRef = useRef(null);
   const galleryImages = (wish?.images?.length
     ? wish.images
     : defaultGalleryImages.map((url) => ({ url }))).slice(0, 6);
-  const shayariLines = useMemo(() => splitShayari(wish?.shayari), [wish?.shayari]);
-  const recipientName = wish?.recipientName || "Birthday Star";
-  const relation = wish?.relation || "family";
-  const highlightedMessage = `🎂 Happy Birthday ${recipientName} 🎂`;
-  const subMessage = wish?.message?.trim() || "Tu sirf dost nahi, family hai ❤️";
-  const finaleMessage = wish?.message?.trim() || `${recipientName}, aaj ka din sirf tumhari smile ke naam.`;
-  const finaleCaption = wish?.shayari?.trim() || `Tum sirf ${relation} nahi ho, meri duniya ka sabse pyara hissa ho.`;
-  const [stage, setStage] = useState(STORY_STAGES.LETTER);
+  const shayariParagraphs = useMemo(() => {
+    const lines = splitLongText(wish?.shayari);
+    return lines.length
+      ? lines
+      : [
+          "Har dua me tera naam saja rehta hai.",
+          "Har khushi me tera hi chehra dikhta hai.",
+          "Aaj ka din bas tumhari smile ke naam."
+        ];
+  }, [wish?.shayari]);
+  const messageParagraphs = useMemo(() => {
+    const lines = splitLongText(wish?.message);
+    return lines.length
+      ? lines
+      : [
+          `Happy Birthday ${wish?.recipientName || "Birthday Star"}.`,
+          `Tu sirf ${wish?.relation?.toLowerCase() || "special"} nahi, meri family hai.`
+        ];
+  }, [wish?.message, wish?.recipientName, wish?.relation]);
+  const presetTrack = musicPresets.find((preset) => preset.value === wish?.music?.preset);
+  const defaultTrack = musicPresets.find((preset) => preset.isDefault);
+  const storyTrack = wish?.music?.type === "upload" && wish?.music?.url
+    ? wish.music.url
+    : presetTrack?.url || defaultTrack?.url || "";
+  const [stage, setStage] = useState(STORY_STAGES.LOADING);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [muted, setMuted] = useState(false);
   const [replayToken, setReplayToken] = useState(0);
   const [letterOpening, setLetterOpening] = useState(false);
-  const [celebrationTriggered, setCelebrationTriggered] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [audioExpanded, setAudioExpanded] = useState(false);
-  const activeStageIndex = STAGE_SEQUENCE.indexOf(stage);
-  const activeStageLabel = {
-    [STORY_STAGES.LETTER]: "Arrival",
-    [STORY_STAGES.SHAYARI]: "Shayari",
-    [STORY_STAGES.MESSAGE]: "Message",
-    [STORY_STAGES.PHOTOS]: "Memories",
-    [STORY_STAGES.CELEBRATION]: "Finale"
-  }[stage];
+  const [letterOpened, setLetterOpened] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [giftOpened, setGiftOpened] = useState(false);
 
   useEffect(() => {
     const handleChange = () => {
@@ -391,54 +397,39 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
   }, []);
 
   useEffect(() => {
-    if (stage !== STORY_STAGES.LETTER || letterOpening) {
-      return undefined;
-    }
-
-    const autoOpenTimer = window.setTimeout(() => {
-      setLetterOpening(true);
-      playPaperOpenSound();
-    }, 2200);
-
-    return () => window.clearTimeout(autoOpenTimer);
-  }, [letterOpening, replayToken, stage]);
-
-  useEffect(() => {
-    let timer;
-
-    if (stage === STORY_STAGES.SHAYARI) {
-      timer = window.setTimeout(() => setStage(STORY_STAGES.MESSAGE), STAGE_TIMINGS.shayari);
-    } else if (stage === STORY_STAGES.MESSAGE) {
-      timer = window.setTimeout(() => setStage(STORY_STAGES.PHOTOS), STAGE_TIMINGS.message);
-    } else if (stage === STORY_STAGES.PHOTOS) {
-      timer = window.setTimeout(() => setStage(STORY_STAGES.CELEBRATION), STAGE_TIMINGS.photos);
-    }
-
-    return () => window.clearTimeout(timer);
-  }, [stage]);
-
-  useEffect(() => {
-    if (stage !== STORY_STAGES.MESSAGE) {
+    const audio = storyAudioRef.current;
+    if (!audio) {
       return;
     }
 
-    confetti({ particleCount: 140, spread: 76, origin: { y: 0.55 } });
-  }, [stage]);
+    audio.muted = muted;
+  }, [muted]);
 
   useEffect(() => {
-    if (stage === STORY_STAGES.CELEBRATION && !celebrationTriggered) {
-      setCelebrationTriggered(true);
-      confetti({ particleCount: 200, spread: 96, origin: { y: 0.42 } });
-      window.setTimeout(() => {
-        confetti({ particleCount: 120, spread: 120, origin: { x: 0.18, y: 0.32 } });
-      }, 400);
-      window.setTimeout(() => {
-        confetti({ particleCount: 120, spread: 120, origin: { x: 0.82, y: 0.32 } });
-      }, 720);
+    const audio = storyAudioRef.current;
+    if (!audio) {
+      return;
     }
-  }, [celebrationTriggered, stage]);
 
-  function startOpening() {
+    if (
+      stage !== STORY_STAGES.LOADING &&
+      stage !== STORY_STAGES.FINALE &&
+      !giftOpened &&
+      storyTrack
+    ) {
+      audio.volume = 0.24;
+      audio.play().catch(() => undefined);
+      return;
+    }
+
+    audio.pause();
+  }, [giftOpened, stage, storyTrack]);
+
+  function beginStory() {
+    setStage(STORY_STAGES.LETTER);
+  }
+
+  function startLetterOpening() {
     if (letterOpening) {
       return;
     }
@@ -448,15 +439,51 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
   }
 
   function handleLetterOpened() {
-    setStage(STORY_STAGES.SHAYARI);
+    setLetterOpened(true);
+  }
+
+  function goToNextStage() {
+    if (stage === STORY_STAGES.LETTER) {
+      setStage(STORY_STAGES.SHAYARI);
+      return;
+    }
+
+    if (stage === STORY_STAGES.SHAYARI) {
+      setStage(STORY_STAGES.MESSAGE);
+      return;
+    }
+
+    if (stage === STORY_STAGES.MESSAGE) {
+      setStage(STORY_STAGES.PHOTOS);
+      return;
+    }
+
+    if (stage === STORY_STAGES.PHOTOS) {
+      setStage(STORY_STAGES.FINALE);
+    }
   }
 
   function handleReplay() {
-    setStage(STORY_STAGES.LETTER);
+    setStage(STORY_STAGES.LOADING);
     setReplayToken((current) => current + 1);
     setLetterOpening(false);
-    setCelebrationTriggered(false);
-    setAudioExpanded(false);
+    setLetterOpened(false);
+    setPhotoIndex(0);
+    setGiftOpened(false);
+
+    if (storyAudioRef.current) {
+      storyAudioRef.current.currentTime = 0;
+      storyAudioRef.current.pause();
+    }
+  }
+
+  function handleOpenGift() {
+    setGiftOpened(true);
+
+    if (storyAudioRef.current) {
+      storyAudioRef.current.pause();
+      storyAudioRef.current.currentTime = 0;
+    }
   }
 
   async function toggleFullscreen() {
@@ -476,14 +503,12 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
     <div ref={containerRef} className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <FloatingBackdrop />
 
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,23,42,0)_38%,rgba(2,6,23,0.65)_76%,rgba(2,6,23,0.95)_100%)]" />
+      <audio ref={storyAudioRef} loop preload="none">
+        {storyTrack ? <source src={storyTrack} /> : null}
+      </audio>
 
       <div className="absolute right-4 top-4 z-40 flex flex-wrap justify-end gap-3 sm:right-6 sm:top-6">
-        <button
-          type="button"
-          onClick={() => setMuted((current) => !current)}
-          className="button-secondary"
-        >
+        <button type="button" onClick={() => setMuted((current) => !current)} className="button-secondary">
           {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           {muted ? "Unmute" : "Mute"}
         </button>
@@ -497,276 +522,214 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
         </button>
       </div>
 
-      <div className="pointer-events-none absolute left-4 top-4 z-40 sm:left-6 sm:top-6">
+      <div className="absolute left-4 top-4 z-40 sm:left-6 sm:top-6">
         <div className="rounded-full border border-cyan-300/18 bg-slate-950/50 px-4 py-2 backdrop-blur-xl">
           <span className="text-xs uppercase tracking-[0.34em] text-cyan-100/80">BALL Experience</span>
         </div>
       </div>
 
-      <div className="pointer-events-none absolute left-4 top-20 z-40 hidden sm:block sm:left-6">
-        <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/35 px-4 py-4 backdrop-blur-xl">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-white/45">Story Flow</p>
-          <div className="mt-4 flex flex-col gap-2">
-            {STAGE_SEQUENCE.map((stageName, index) => (
-              <div key={stageName} className="flex items-center gap-3">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    index <= activeStageIndex ? "bg-cyan-200 shadow-[0_0_14px_rgba(103,232,249,0.8)]" : "bg-white/18"
-                  }`}
-                />
-                <span className={`text-sm ${index === activeStageIndex ? "text-white" : "text-white/45"}`}>
-                  {{
-                    [STORY_STAGES.LETTER]: "Arrival",
-                    [STORY_STAGES.SHAYARI]: "Shayari",
-                    [STORY_STAGES.MESSAGE]: "Message",
-                    [STORY_STAGES.PHOTOS]: "Memories",
-                    [STORY_STAGES.CELEBRATION]: "Finale"
-                  }[stageName]}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="absolute left-4 top-20 z-40 hidden sm:block sm:left-6">
+        {stage !== STORY_STAGES.LOADING ? <ProgressRail stage={stage} /> : null}
       </div>
 
       <AnimatePresence mode="wait">
-        {stage === STORY_STAGES.LETTER ? (
-          <motion.div
-            key="letter-stage"
+        {stage === STORY_STAGES.LOADING ? (
+          <motion.section
+            key="loading"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.9 }}
-            className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12"
+            className="relative z-10 flex min-h-screen items-center justify-center px-5"
           >
-            <div className="absolute inset-0">
+            <div className="w-full max-w-2xl rounded-[2.5rem] border border-white/12 bg-white/8 p-8 text-center shadow-[0_0_60px_rgba(34,211,238,0.08)] backdrop-blur-2xl sm:p-12">
+              <LoaderCircle className="mx-auto h-10 w-10 animate-spin text-cyan-200" />
+              <p className="mt-6 text-sm uppercase tracking-[0.38em] text-white/50">Preparing your story</p>
+              <h1 className="mt-5 text-4xl font-semibold text-white sm:text-5xl">
+                A birthday surprise for {wish?.recipientName || "someone special"}
+              </h1>
+              <p className="mt-4 text-lg leading-8 text-white/65">
+                The story pauses after every step. Tap only when you are ready for the next emotion.
+              </p>
+              <button type="button" onClick={beginStory} className="button-primary mt-8">
+                Start Story
+              </button>
+            </div>
+          </motion.section>
+        ) : null}
+
+        {stage === STORY_STAGES.LETTER ? (
+          <motion.section
+            key="letter"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="relative z-10 min-h-screen px-4 py-20 sm:px-6"
+          >
+            <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="space-y-6 rounded-[2.5rem] border border-white/12 bg-slate-950/35 p-8 backdrop-blur-2xl">
+                <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/55">Step 1</p>
+                <h2 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
+                  Pehle ek khat khulega, phir dil ki baat saamne aayegi
+                </h2>
+                <p className="text-lg leading-8 text-white/68">
+                  Envelope par tap karo. Jab tak tum open nahi karoge, story yahin rukkar tumhara wait karegi.
+                </p>
+
+                {letterOpened ? (
+                  <button type="button" onClick={goToNextStage} className="button-primary">
+                    Continue to Shayari
+                  </button>
+                ) : (
+                  <button type="button" onClick={startLetterOpening} className="button-secondary">
+                    Open Letter
+                  </button>
+                )}
+              </div>
+
               <MagicLetterScene
                 replayToken={replayToken}
                 opening={letterOpening}
                 onOpened={handleLetterOpened}
-                onOpenRequest={startOpening}
-                className="h-[100svh] rounded-none border-0 bg-transparent shadow-none"
+                onOpenRequest={startLetterOpening}
               />
             </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35, duration: 0.75 }}
-              className="pointer-events-none relative z-10 mx-auto max-w-4xl text-center"
-            >
-              <p className="text-sm uppercase tracking-[0.48em] text-white/60">A surprise is arriving</p>
-              <h1 className="mt-5 text-4xl font-semibold leading-tight text-white drop-shadow-[0_0_28px_rgba(236,72,153,0.35)] sm:text-6xl">
-                Someone has wrapped a little magic for you
-              </h1>
-              <p className="mt-6 text-base text-white/70 sm:text-lg">
-                Tap to open your surprise 💌
-              </p>
-            </motion.div>
-          </motion.div>
+          </motion.section>
         ) : null}
 
         {stage === STORY_STAGES.SHAYARI ? (
           <motion.section
-            key="shayari-stage"
-            initial={{ opacity: 0, scale: 1.05, filter: "blur(10px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, scale: 0.98, filter: "blur(8px)" }}
-            transition={{ duration: 0.9 }}
-            className="relative z-10 flex min-h-screen items-center justify-center px-5 py-20"
+            key="shayari"
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -18 }}
+            className="relative z-10 min-h-screen px-4 py-20 sm:px-6"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.16),transparent_30%),radial-gradient(circle_at_bottom,rgba(236,72,153,0.18),transparent_34%)]" />
-            <div className="relative grid w-full max-w-7xl items-center gap-8 rounded-[2.5rem] border border-white/12 bg-white/8 px-6 py-8 shadow-[0_0_65px_rgba(168,85,247,0.18)] backdrop-blur-2xl sm:px-8 sm:py-10 lg:grid-cols-[0.95fr_1.05fr] lg:px-12">
-              <div className="relative z-10">
-                <p className="text-left text-sm uppercase tracking-[0.46em] text-fuchsia-100/70">Shayari</p>
-                <div className="mt-8 max-w-2xl">
-                  <TypewriterLines lines={shayariLines} active duration={STAGE_TIMINGS.shayari} />
+            <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1fr_0.95fr]">
+              <div className="rounded-[2.5rem] border border-white/12 bg-slate-950/35 p-8 backdrop-blur-2xl">
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/55">Shayari</p>
+                <h2 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
+                  Har line me thoda sa pyaar, thoda sa intezar
+                </h2>
+                <div className="mt-8">
+                  <RevealParagraphs paragraphs={shayariParagraphs} active />
                 </div>
+                <button type="button" onClick={goToNextStage} className="button-primary mt-8">
+                  Continue to Message
+                </button>
               </div>
 
-              <div className="relative min-h-[320px]">
-                <FloatingPhotos images={galleryImages.slice(0, 3)} recipientName={recipientName} active />
-                <motion.div
-                  animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
-                  transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}
-                  className="relative z-10 mx-auto w-full max-w-3xl pt-6 lg:pt-0"
-                >
-                  <Preview3D
-                    wish={wish}
-                    mode="public"
-                    replayToken={replayToken}
-                    showOverlay={false}
-                    className="h-[320px] border-white/14 bg-slate-950/40 shadow-[0_0_60px_rgba(34,211,238,0.12)] sm:h-[380px]"
-                  />
-                </motion.div>
-              </div>
+              <motion.div
+                animate={{ y: [0, -8, 0], scale: [1, 1.015, 1] }}
+                transition={{ repeat: Infinity, duration: 5.2, ease: "easeInOut" }}
+              >
+                <Preview3D
+                  wish={wish}
+                  mode="public"
+                  replayToken={replayToken}
+                  showOverlay={false}
+                  className="min-h-[340px] border-white/12 bg-slate-950/32 sm:min-h-[420px]"
+                />
+              </motion.div>
             </div>
           </motion.section>
         ) : null}
 
         {stage === STORY_STAGES.MESSAGE ? (
           <motion.section
-            key="message-stage"
-            initial={{ opacity: 0, scale: 0.92 }}
+            key="message"
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.04 }}
-            transition={{ duration: 0.75 }}
-            className="relative z-10 flex min-h-screen items-center justify-center px-5 py-20"
+            exit={{ opacity: 0, scale: 1.02 }}
+            className="relative z-10 flex min-h-screen items-center justify-center px-4 py-20 sm:px-6"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(236,72,153,0.2),transparent_28%),radial-gradient(circle_at_center,rgba(34,211,238,0.14),transparent_54%)]" />
-            <motion.div
-              animate={{ scale: [1, 1.03, 1], opacity: [0.92, 1, 0.92], y: [0, -6, 0] }}
-              transition={{ repeat: Infinity, duration: 3.8, ease: "easeInOut" }}
-              className="relative mx-auto max-w-5xl text-center"
-            >
-              <p className="text-sm uppercase tracking-[0.46em] text-amber-100/75">For your {relation}</p>
-              <h2 className="mt-7 text-4xl font-semibold leading-tight text-white drop-shadow-[0_0_40px_rgba(103,232,249,0.32)] sm:text-6xl lg:text-7xl">
-                {highlightedMessage}
+            <div className="w-full max-w-5xl rounded-[2.5rem] border border-white/12 bg-white/8 p-8 text-center backdrop-blur-2xl sm:p-12">
+              <p className="text-xs uppercase tracking-[0.32em] text-amber-100/55">Main Message</p>
+              <h2 className="mt-5 text-4xl font-semibold leading-tight text-white drop-shadow-[0_0_28px_rgba(244,114,182,0.2)] sm:text-6xl">
+                🎂 Happy Birthday {wish?.recipientName || "Birthday Star"} 🎂
               </h2>
-              <p className="mt-8 text-2xl font-medium text-rose-100/95 drop-shadow-[0_0_24px_rgba(244,114,182,0.28)] sm:text-4xl">
-                {subMessage}
-              </p>
-            </motion.div>
+              <div className="mt-8 mx-auto max-w-3xl text-left">
+                <RevealParagraphs paragraphs={messageParagraphs} active maxCollapsed={5} />
+              </div>
+              <button type="button" onClick={goToNextStage} className="button-primary mt-10">
+                Continue to Memories
+              </button>
+            </div>
           </motion.section>
         ) : null}
 
         {stage === STORY_STAGES.PHOTOS ? (
           <motion.section
-            key="photos-stage"
+            key="photos"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="relative z-10 min-h-screen"
+            className="relative z-10 min-h-screen px-4 py-20 sm:px-6"
           >
-            <FloatingPhotos images={galleryImages} recipientName={recipientName} active />
-            <div className="relative z-10 flex min-h-screen items-end justify-center px-5 pb-32 pt-20">
-              <div className="rounded-[2rem] border border-white/12 bg-slate-950/35 px-6 py-5 text-center backdrop-blur-xl">
-                <p className="text-sm uppercase tracking-[0.36em] text-cyan-100/75">Memories in motion</p>
-                <p className="mt-3 text-lg text-white/72 sm:text-xl">
-                  Every frame carries a little more of the story.
-                </p>
+            <div className="mx-auto max-w-7xl">
+              <PhotoStage
+                images={galleryImages}
+                frameStyle={wish?.photoFrameStyle || "romantic"}
+                transition={wish?.photoTransition || "fade"}
+                recipientName={wish?.recipientName || "Birthday memory"}
+                photoIndex={photoIndex}
+                setPhotoIndex={setPhotoIndex}
+              />
+
+              <div className="mt-8 flex justify-center">
+                <button type="button" onClick={goToNextStage} className="button-primary">
+                  Continue to Final Gift
+                </button>
               </div>
             </div>
           </motion.section>
         ) : null}
 
-        {stage === STORY_STAGES.CELEBRATION ? (
+        {stage === STORY_STAGES.FINALE ? (
           <motion.section
-            key="celebration-stage"
-            initial={{ opacity: 0, scale: 1.04 }}
+            key="finale"
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.9 }}
-            className="relative z-10 min-h-screen"
+            className="relative z-10 flex min-h-screen items-center justify-center px-4 py-20 sm:px-6"
           >
-            <Preview3D
-              wish={wish}
-              mode="public"
-              replayToken={replayToken}
-              showOverlay={false}
-              className="h-[100svh] rounded-none border-0 bg-transparent shadow-none"
-            />
+            <div className="w-full max-w-5xl text-center">
+              <p className="text-xs uppercase tracking-[0.34em] text-cyan-100/55">Final Surprise</p>
+              <h2 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
+                Aakhri gift tumhare liye
+              </h2>
+              <p className="mt-4 text-lg text-white/65">
+                Tap the gift box to reveal the final message. Music stops here so the ending feels like a quiet surprise.
+              </p>
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-28 z-20 flex justify-start px-4 sm:px-6">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.75, ease: "easeOut" }}
-                className="max-w-xl rounded-[2rem] border border-white/12 bg-slate-950/42 px-5 py-5 text-left backdrop-blur-xl sm:px-6"
-              >
-                <p className="text-[11px] uppercase tracking-[0.32em] text-white/45">Scene {activeStageLabel}</p>
-                <FinaleMessage title={finaleMessage} caption={finaleCaption} active={stage === STORY_STAGES.CELEBRATION} />
-                {shareUrl ? (
-                  <p className="mt-3 text-sm text-cyan-100/80">
-                    Shareable surprise ready: {shareUrl}
-                  </p>
+              <div className="mt-10">
+                <GiftRevealBox open={giftOpened} onOpen={handleOpenGift} />
+              </div>
+
+              <AnimatePresence>
+                {giftOpened ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 26 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.55, ease: "easeOut" }}
+                    className="mx-auto mt-10 max-w-3xl rounded-[2.2rem] border border-white/12 bg-slate-950/40 px-6 py-8 backdrop-blur-2xl"
+                  >
+                    <h3 className="text-3xl font-semibold text-white sm:text-4xl">
+                      {wish?.message?.trim() || `${wish?.recipientName}, tum meri duniya ka sabse khoobsurat hissa ho.`}
+                    </h3>
+                    <p className="mt-5 text-lg leading-8 text-white/72">
+                      {wish?.shayari?.trim() || `Aaj ka din tumhari khushi ke naam. Happy Birthday, ${wish?.recipientName || "Birthday Star"}.`}
+                    </p>
+                    <div className="mt-8">
+                      <FooterLinks />
+                    </div>
+                  </motion.div>
                 ) : null}
-              </motion.div>
+              </AnimatePresence>
             </div>
           </motion.section>
         ) : null}
       </AnimatePresence>
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="pointer-events-auto max-w-2xl">
-            <AnimatePresence initial={false} mode="wait">
-              {audioExpanded ? (
-                <motion.div
-                  key="audio-expanded"
-                  initial={{ opacity: 0, y: 24, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 18, scale: 0.98 }}
-                  transition={{ duration: 0.28, ease: "easeOut" }}
-                  className="w-[min(100vw-2rem,42rem)] sm:w-[38rem]"
-                >
-                  <div className="mb-2 flex justify-start">
-                    <button
-                      type="button"
-                      onClick={() => setAudioExpanded(false)}
-                      className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 text-xs uppercase tracking-[0.22em] text-white/65 backdrop-blur-xl transition hover:border-white/20 hover:text-white"
-                    >
-                      Hide soundtrack
-                    </button>
-                  </div>
-                  <AudioControlBar
-                    wish={wish}
-                    compact
-                    autoPlay
-                    initialVolume={0.24}
-                    muted={muted}
-                    onMutedChange={setMuted}
-                    title="BALL Soundtrack"
-                    className="border-white/12 bg-slate-950/72 backdrop-blur-2xl"
-                  />
-                </motion.div>
-              ) : (
-                <div className="relative">
-                  <div className="absolute left-0 top-0 h-0 w-0 overflow-hidden opacity-0">
-                    <AudioControlBar
-                      wish={wish}
-                      compact
-                      autoPlay
-                      initialVolume={0.24}
-                      muted={muted}
-                      onMutedChange={setMuted}
-                      title="BALL Soundtrack"
-                      className="border-white/12 bg-slate-950/72 backdrop-blur-2xl"
-                    />
-                  </div>
-
-                  <motion.button
-                    key="audio-collapsed"
-                    type="button"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 12 }}
-                    whileHover={{ y: -2 }}
-                    onClick={() => setAudioExpanded(true)}
-                    className="flex items-center gap-3 rounded-[1.35rem] border border-white/12 bg-slate-950/62 px-4 py-3 text-left text-white shadow-glow backdrop-blur-xl"
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/12 text-cyan-100">
-                      <Music4 className="h-4 w-4" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-xs uppercase tracking-[0.28em] text-cyan-100/70">BALL Soundtrack</span>
-                      <span className="block truncate text-sm text-white/70">
-                        {muted ? "Muted" : "Ambient music playing"} • Tap to expand
-                      </span>
-                    </span>
-                    <ChevronUp className="h-4 w-4 text-white/55" />
-                  </motion.button>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="pointer-events-auto self-start sm:self-auto">
-            <FooterBranding />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

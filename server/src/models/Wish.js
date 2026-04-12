@@ -50,6 +50,16 @@ const wishSchema = new mongoose.Schema(
       type: [mediaSchema],
       default: []
     },
+    photoFrameStyle: {
+      type: String,
+      enum: ["romantic", "birthday", "neon", "classic"],
+      default: "romantic"
+    },
+    photoTransition: {
+      type: String,
+      enum: ["fade", "slide", "zoom", "flip"],
+      default: "fade"
+    },
     music: {
       type: {
         type: String,
