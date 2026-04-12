@@ -216,9 +216,9 @@ function FloatingPhotos({ images, recipientName, active }) {
             active
               ? {
                   opacity: 1,
-                  scale: [1, 1.06, 1],
-                  x: [0, index % 2 === 0 ? 18 : -18, 0],
-                  y: [0, -16, 0],
+                  scale: [1, 1.08, 1],
+                  x: [0, index % 2 === 0 ? 32 : -32, 0],
+                  y: [0, -24, 10, 0],
                   rotate: [image.rotate, image.rotate + 2.5, image.rotate]
                 }
               : { opacity: 0 }
@@ -243,7 +243,7 @@ function FloatingPhotos({ images, recipientName, active }) {
             <img
               src={image.url}
               alt={`${recipientName} memory ${index + 1}`}
-              className="h-52 w-full rounded-[1.5rem] object-cover opacity-90 blur-[0.2px] transition duration-700 group-hover:scale-105 group-hover:opacity-100"
+            className="h-52 w-full rounded-[1.5rem] object-cover opacity-90 blur-[0.2px] transition duration-700 group-hover:scale-110 group-hover:opacity-100"
             />
           </div>
         </motion.div>
@@ -469,10 +469,29 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
             className="relative z-10 flex min-h-screen items-center justify-center px-5 py-20"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.16),transparent_30%),radial-gradient(circle_at_bottom,rgba(236,72,153,0.18),transparent_34%)]" />
-            <div className="relative w-full max-w-5xl rounded-[2.5rem] border border-white/12 bg-white/8 px-6 py-10 shadow-[0_0_65px_rgba(168,85,247,0.18)] backdrop-blur-2xl sm:px-10 sm:py-14 lg:px-16">
-              <p className="text-center text-sm uppercase tracking-[0.46em] text-fuchsia-100/70">Shayari</p>
-              <div className="mt-8">
-                <TypewriterLines lines={shayariLines} active duration={STAGE_TIMINGS.shayari} />
+            <div className="relative grid w-full max-w-7xl items-center gap-8 rounded-[2.5rem] border border-white/12 bg-white/8 px-6 py-8 shadow-[0_0_65px_rgba(168,85,247,0.18)] backdrop-blur-2xl sm:px-8 sm:py-10 lg:grid-cols-[0.95fr_1.05fr] lg:px-12">
+              <div className="relative z-10">
+                <p className="text-left text-sm uppercase tracking-[0.46em] text-fuchsia-100/70">Shayari</p>
+                <div className="mt-8 max-w-2xl">
+                  <TypewriterLines lines={shayariLines} active duration={STAGE_TIMINGS.shayari} />
+                </div>
+              </div>
+
+              <div className="relative min-h-[320px]">
+                <FloatingPhotos images={galleryImages.slice(0, 3)} recipientName={recipientName} active />
+                <motion.div
+                  animate={{ y: [0, -10, 0], scale: [1, 1.015, 1] }}
+                  transition={{ repeat: Infinity, duration: 5.5, ease: "easeInOut" }}
+                  className="relative z-10 mx-auto w-full max-w-3xl pt-6 lg:pt-0"
+                >
+                  <Preview3D
+                    wish={wish}
+                    mode="public"
+                    replayToken={replayToken}
+                    showOverlay={false}
+                    className="h-[320px] border-white/14 bg-slate-950/40 shadow-[0_0_60px_rgba(34,211,238,0.12)] sm:h-[380px]"
+                  />
+                </motion.div>
               </div>
             </div>
           </motion.section>
@@ -489,7 +508,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(236,72,153,0.2),transparent_28%),radial-gradient(circle_at_center,rgba(34,211,238,0.14),transparent_54%)]" />
             <motion.div
-              animate={{ scale: [1, 1.03, 1], opacity: [0.92, 1, 0.92] }}
+              animate={{ scale: [1, 1.03, 1], opacity: [0.92, 1, 0.92], y: [0, -6, 0] }}
               transition={{ repeat: Infinity, duration: 3.8, ease: "easeInOut" }}
               className="relative mx-auto max-w-5xl text-center"
             >
@@ -543,7 +562,11 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
             />
 
             <div className="pointer-events-none absolute inset-x-0 top-24 z-20 flex justify-center px-4">
-              <div className="max-w-3xl rounded-[2rem] border border-white/12 bg-slate-950/38 px-6 py-5 text-center backdrop-blur-xl">
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                className="max-w-3xl rounded-[2rem] border border-white/12 bg-slate-950/38 px-6 py-5 text-center backdrop-blur-xl"
+              >
                 <p className="text-sm uppercase tracking-[0.4em] text-emerald-100/75">{template.shortLabel}</p>
                 <h3 className="mt-3 text-3xl font-semibold text-white sm:text-5xl">
                   BALL finale for {recipientName}
@@ -556,14 +579,14 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
                     Shareable surprise ready: {shareUrl}
                   </p>
                 ) : null}
-              </div>
+              </motion.div>
             </div>
           </motion.section>
         ) : null}
       </AnimatePresence>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col items-center gap-3 px-4 pb-4 sm:pb-6">
-        <div className="pointer-events-auto w-full max-w-3xl">
+        <div className="pointer-events-auto w-full max-w-2xl">
           <AudioControlBar
             wish={wish}
             compact

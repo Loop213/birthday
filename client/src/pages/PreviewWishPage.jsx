@@ -214,7 +214,7 @@ export default function PreviewWishPage() {
         {loading || !wish || !renderedWish ? (
           <div className="glass-panel px-6 py-8 text-white/70">Preparing template preview...</div>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_360px]">
             <WishViewer
               wish={renderedWish}
               mode="preview"
@@ -222,7 +222,7 @@ export default function PreviewWishPage() {
               allowShare={wish?.paymentStatus === "paid" && Boolean(wish.shareSlug)}
             />
 
-            <div className="space-y-6">
+            <div className="space-y-6 2xl:sticky 2xl:top-24 2xl:self-start">
               <Payment
                 wish={wish}
                 pricing={pricing}

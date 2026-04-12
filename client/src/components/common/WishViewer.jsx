@@ -140,19 +140,26 @@ export default function WishViewer({
         <Preview3D wish={wish} mode={mode} replayToken={replayToken} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
         <div className="glass-panel p-6">
-          <p className="text-xs uppercase tracking-[0.22em] text-white/45">Message</p>
-          <p className="mt-4 min-h-[84px] text-lg leading-8 text-white/80">
-            {typedMessage}
-            {wish?.message ? (
-              <span className="ml-1 inline-block h-5 w-1 animate-pulse rounded-full bg-cyan-200 align-middle" />
-            ) : null}
-          </p>
+          <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="rounded-[1.5rem] border border-fuchsia-300/12 bg-white/5 p-5">
+              <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-100/55">Shayari</p>
+              <blockquote className="mt-4 min-h-[140px] text-lg italic leading-8 text-rose-50/85">
+                {wish?.shayari || "No extra shayari was added, so the template itself carries the emotion."}
+              </blockquote>
+            </div>
 
-          <blockquote className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/5 p-5 text-white/70">
-            {wish?.shayari || "No extra shayari was added, so the template itself carries the emotion."}
-          </blockquote>
+            <div className="rounded-[1.5rem] border border-cyan-300/12 bg-white/5 p-5">
+              <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/55">Message</p>
+              <p className="mt-4 min-h-[140px] text-lg leading-8 text-white/80">
+                {typedMessage}
+                {wish?.message ? (
+                  <span className="ml-1 inline-block h-5 w-1 animate-pulse rounded-full bg-cyan-200 align-middle" />
+                ) : null}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="glass-panel p-6">

@@ -283,28 +283,28 @@ export default function AudioControlBar({
   const trackName = activeTrack?.label || "Ambient background";
 
   return (
-    <div className={`glass-panel border-white/12 bg-slate-950/55 p-4 shadow-glow backdrop-blur-2xl ${className}`}>
+    <div className={`glass-panel border-white/12 bg-slate-950/55 ${compact ? "p-3 sm:p-4" : "p-4"} shadow-glow backdrop-blur-2xl ${className}`}>
       <audio ref={mainAudioRef} loop preload="none">
         {activeTrack?.source ? <source src={activeTrack.source} /> : null}
       </audio>
       <audio ref={previewAudioRef} preload="none" className="hidden" />
 
-      <div className={`flex ${compact ? "flex-col gap-4" : "flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"}`}>
+      <div className={`flex ${compact ? "flex-col gap-3" : "flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"}`}>
         <div className="min-w-0">
           <div className="flex items-center gap-3 text-cyan-100">
             <Music2 className="h-4 w-4" />
             <span className="text-sm font-medium uppercase tracking-[0.24em]">{title}</span>
           </div>
-          <p className="mt-3 truncate text-lg font-semibold text-white">{trackName}</p>
-          <p className="mt-1 text-sm text-white/55">
+          <p className={`mt-2 truncate font-semibold text-white ${compact ? "text-base" : "text-lg"}`}>{trackName}</p>
+          <p className={`mt-1 text-white/55 ${compact ? "text-xs" : "text-sm"}`}>
             {mode === "custom"
               ? "Custom song active. Default ambient music is paused."
               : "Built-in ambient track running softly in the background."}
           </p>
         </div>
 
-        <div className={`flex ${compact ? "flex-col gap-4" : "flex-col gap-4 lg:min-w-[420px]"}`}>
-          <div className="flex flex-wrap gap-3">
+        <div className={`flex ${compact ? "flex-col gap-3" : "flex-col gap-4 lg:min-w-[420px]"}`}>
+          <div className="flex flex-wrap gap-2">
             <button type="button" onClick={toggleMainPlayback} className="button-secondary">
               {mainPlaying && !silenced ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {mainPlaying && !silenced ? "Pause" : "Play"}
@@ -315,22 +315,22 @@ export default function AudioControlBar({
             </button>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={`grid gap-3 ${compact ? "md:grid-cols-2" : "sm:grid-cols-2"}`}>
             <button
               type="button"
               onClick={() => switchMode("default")}
-              className={`rounded-[1.35rem] border px-4 py-3 text-left transition ${
+              className={`rounded-[1.2rem] border px-4 ${compact ? "py-2.5" : "py-3"} text-left transition ${
                 mode === "default"
                   ? "border-cyan-300/40 bg-cyan-300/10"
                   : "border-white/10 bg-white/5 hover:bg-white/8"
               }`}
             >
               <p className="font-semibold text-white">Default Music</p>
-              <p className="mt-1 text-sm text-white/55">Soft built-in ambient loop at low volume</p>
+              <p className={`mt-1 text-white/55 ${compact ? "text-xs" : "text-sm"}`}>Soft built-in ambient loop at low volume</p>
             </button>
 
             <label
-              className={`cursor-pointer rounded-[1.35rem] border px-4 py-3 transition ${
+              className={`cursor-pointer rounded-[1.2rem] border px-4 ${compact ? "py-2.5" : "py-3"} transition ${
                 mode === "custom"
                   ? "border-fuchsia-300/35 bg-fuchsia-300/10"
                   : "border-white/10 bg-white/5 hover:bg-white/8"
@@ -340,14 +340,14 @@ export default function AudioControlBar({
                 <Upload className="mt-0.5 h-4 w-4 text-fuchsia-100" />
                 <div>
                   <p className="font-semibold text-white">Use Your Own Song</p>
-                  <p className="mt-1 text-sm text-white/55">MP3 or WAV. Replaces the built-in background.</p>
+                  <p className={`mt-1 text-white/55 ${compact ? "text-xs" : "text-sm"}`}>MP3 or WAV. Replaces the built-in background.</p>
                 </div>
               </div>
               <input type="file" accept=".mp3,.wav,audio/mpeg,audio/wav" onChange={handleCustomFileChange} className="hidden" />
             </label>
           </div>
 
-          <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
+          <div className={`rounded-[1.2rem] border border-white/10 bg-white/5 ${compact ? "p-3" : "p-4"}`}>
             <div className="flex items-center justify-between gap-4">
               <span className="text-xs uppercase tracking-[0.22em] text-white/45">Volume</span>
               <span className="text-sm text-white/60">{Math.round((muted ? 0 : volume) * 100)}%</span>
@@ -373,7 +373,7 @@ export default function AudioControlBar({
         </div>
       </div>
 
-      <div className="mt-4 rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
+      <div className={`mt-4 rounded-[1.2rem] border border-white/10 bg-white/5 ${compact ? "p-3" : "p-4"}`}>
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-white">Song Preview</p>
@@ -384,7 +384,7 @@ export default function AudioControlBar({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3">
+        <div className={`mt-4 grid gap-3 ${compact ? "max-h-52 overflow-y-auto pr-1" : ""}`}>
           {[
             ...runtimeTracks,
             ...(customTrack?.url ? [{ id: customTrack.id, label: customTrack.label, source: customTrack.url, kind: "custom" }] : [])
@@ -393,7 +393,7 @@ export default function AudioControlBar({
             .map((track) => (
               <div
                 key={track.id}
-                className={`rounded-[1.1rem] border px-4 py-3 transition ${
+                className={`rounded-[1.1rem] border ${compact ? "px-3 py-2.5" : "px-4 py-3"} transition ${
                   previewTrackId === track.id
                     ? "border-cyan-300/40 bg-cyan-300/10"
                     : "border-white/10 bg-slate-950/35"
@@ -401,8 +401,8 @@ export default function AudioControlBar({
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-white">{track.label}</p>
-                    <p className="mt-1 text-sm text-white/50">
+                    <p className={`truncate font-medium text-white ${compact ? "text-sm" : ""}`}>{track.label}</p>
+                    <p className={`mt-1 text-white/50 ${compact ? "text-xs" : "text-sm"}`}>
                       {track.kind === "custom" ? "Custom audio" : track.kind === "preset" ? "Wish preset" : "Built-in default"}
                     </p>
                   </div>
