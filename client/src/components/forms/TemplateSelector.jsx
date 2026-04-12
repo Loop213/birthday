@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import { ArrowRight, CakeSlice, Heart, Image, PartyPopper, Sparkles } from "lucide-react";
+import { ArrowRight, CakeSlice, Gift, Heart, Image, PartyPopper, Sparkles } from "lucide-react";
 import { birthdayTemplates } from "../../data/templates.js";
 
 const iconMap = {
+  birthday: Gift,
   "cake-celebration": CakeSlice,
   "balloon-sky": Sparkles,
   "romantic-love": Heart,

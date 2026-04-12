@@ -1,4 +1,6 @@
 import {
+  ChevronLeft,
+  ChevronRight,
   Expand,
   Globe,
   Instagram,
@@ -242,23 +244,6 @@ function PhotoStage({ images, frameStyle, transition, recipientName, photoIndex,
           Tap through the memories in the exact order chosen while creating the surprise.
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => setPhotoIndex((current) => (current - 1 + images.length) % images.length)}
-            className="button-secondary"
-          >
-            Previous Photo
-          </button>
-          <button
-            type="button"
-            onClick={() => setPhotoIndex((current) => (current + 1) % images.length)}
-            className="button-secondary"
-          >
-            Next Photo
-          </button>
-        </div>
-
         <div className="mt-6 flex gap-2">
           {images.map((image, index) => (
             <button
@@ -275,16 +260,51 @@ function PhotoStage({ images, frameStyle, transition, recipientName, photoIndex,
       </div>
 
       <div className={`relative overflow-hidden rounded-[2rem] border p-3 backdrop-blur-xl ${getFrameClass(frameStyle)}`}>
+        <img
+          src={images[photoIndex]?.url}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full scale-110 object-cover blur-3xl opacity-30"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.08),rgba(2,6,23,0.7))]" />
         <AnimatePresence mode="wait">
-          <motion.img
+          <motion.div
             key={images[photoIndex]?.url}
-            src={images[photoIndex]?.url}
-            alt={`${recipientName} memory ${photoIndex + 1}`}
             {...animation}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="h-[340px] w-full rounded-[1.5rem] object-cover sm:h-[420px]"
-          />
+            className="relative flex h-[340px] w-full items-center justify-center rounded-[1.5rem] p-4 sm:h-[420px] sm:p-6"
+          >
+            <img
+              src={images[photoIndex]?.url}
+              alt={`${recipientName} memory ${photoIndex + 1}`}
+              className="max-h-full max-w-full object-contain"
+            />
+          </motion.div>
         </AnimatePresence>
+
+        <div className="absolute inset-x-0 bottom-4 flex justify-center px-4">
+          <div className="flex items-center gap-3 rounded-full border border-white/12 bg-slate-950/68 px-3 py-2 backdrop-blur-xl">
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((current) => (current - 1 + images.length) % images.length)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white transition hover:scale-105 hover:border-cyan-300/35 hover:text-cyan-100 hover:shadow-glow"
+              aria-label="Previous photo"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="min-w-[56px] text-center text-sm text-white/72">
+              {photoIndex + 1} / {images.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPhotoIndex((current) => (current + 1) % images.length)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white transition hover:scale-105 hover:border-cyan-300/35 hover:text-cyan-100 hover:shadow-glow"
+              aria-label="Next photo"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -351,6 +371,7 @@ function FooterLinks() {
 export default function CinematicWishExperience({ wish }) {
   const containerRef = useRef(null);
   const storyAudioRef = useRef(null);
+  const isBirthdayBalloonTemplate = wish?.templateId === "birthday";
   const galleryImages = (wish?.images?.length
     ? wish.images
     : defaultGalleryImages.map((url) => ({ url }))).slice(0, 6);
@@ -569,13 +590,21 @@ export default function CinematicWishExperience({ wish }) {
               <div className="space-y-6 rounded-[2.5rem] border border-white/12 bg-slate-950/35 p-8 backdrop-blur-2xl">
                 <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/55">Step 1</p>
                 <h2 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
-                  Pehle ek khat khulega, phir dil ki baat saamne aayegi
+                  {isBirthdayBalloonTemplate
+                    ? "Balloons pe letters aayenge, phir HAPPY BIRTHDAY khud banega"
+                    : "Pehle ek khat khulega, phir dil ki baat saamne aayegi"}
                 </h2>
                 <p className="text-lg leading-8 text-white/68">
-                  Envelope par tap karo. Jab tak tum open nahi karoge, story yahin rukkar tumhara wait karegi.
+                  {isBirthdayBalloonTemplate
+                    ? "Balloons ko float karte dekho. Alignment complete hone par next chapter tumhare tap se hi khulega."
+                    : "Envelope par tap karo. Jab tak tum open nahi karoge, story yahin rukkar tumhara wait karegi."}
                 </p>
 
-                {letterOpened ? (
+                {isBirthdayBalloonTemplate ? (
+                  <button type="button" onClick={goToNextStage} className="button-primary">
+                    Continue to Shayari
+                  </button>
+                ) : letterOpened ? (
                   <button type="button" onClick={goToNextStage} className="button-primary">
                     Continue to Shayari
                   </button>
@@ -586,12 +615,22 @@ export default function CinematicWishExperience({ wish }) {
                 )}
               </div>
 
-              <MagicLetterScene
-                replayToken={replayToken}
-                opening={letterOpening}
-                onOpened={handleLetterOpened}
-                onOpenRequest={startLetterOpening}
-              />
+              {isBirthdayBalloonTemplate ? (
+                <Preview3D
+                  wish={wish}
+                  mode="public"
+                  replayToken={replayToken}
+                  showOverlay={false}
+                  className="min-h-[420px] border-white/12 bg-slate-950/32 sm:min-h-[560px]"
+                />
+              ) : (
+                <MagicLetterScene
+                  replayToken={replayToken}
+                  opening={letterOpening}
+                  onOpened={handleLetterOpened}
+                  onOpenRequest={startLetterOpening}
+                />
+              )}
             </div>
           </motion.section>
         ) : null}

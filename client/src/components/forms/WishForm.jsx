@@ -433,17 +433,26 @@ export default function WishForm({
               </div>
 
               <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-950/55">
-                <img
-                  src={imagePreviews[previewIndex]?.previewUrl}
-                  alt={imagePreviews[previewIndex]?.name || "Selected preview"}
-                  className={`h-64 w-full object-cover ${
-                    form.photoTransition === "zoom"
-                      ? "transition duration-500 hover:scale-105"
-                      : form.photoTransition === "flip"
-                        ? "transition duration-500 [transform:perspective(1000px)_rotateY(0deg)] hover:[transform:perspective(1000px)_rotateY(10deg)]"
-                        : "transition duration-500"
-                  }`}
-                />
+                <div className="relative flex h-64 w-full items-center justify-center overflow-hidden bg-slate-950/55 p-4">
+                  <img
+                    src={imagePreviews[previewIndex]?.previewUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full scale-110 object-cover blur-3xl opacity-30"
+                  />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.08),rgba(2,6,23,0.72))]" />
+                  <img
+                    src={imagePreviews[previewIndex]?.previewUrl}
+                    alt={imagePreviews[previewIndex]?.name || "Selected preview"}
+                    className={`relative max-h-full max-w-full object-contain ${
+                      form.photoTransition === "zoom"
+                        ? "transition duration-500 hover:scale-105"
+                        : form.photoTransition === "flip"
+                          ? "transition duration-500 [transform:perspective(1000px)_rotateY(0deg)] hover:[transform:perspective(1000px)_rotateY(10deg)]"
+                          : "transition duration-500"
+                    }`}
+                  />
+                </div>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">

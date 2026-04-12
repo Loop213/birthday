@@ -1,4 +1,6 @@
 import {
+  ChevronLeft,
+  ChevronRight,
   Expand,
   MessageCircleMore,
   Minimize2,
@@ -229,13 +231,46 @@ export default function WishViewer({
               initial={{ opacity: 0, y: 18, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.45, ease: "easeOut" }}
-              className="group overflow-hidden rounded-[1.75rem] border border-white/10 bg-white/5"
+              className="relative group overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950/55"
             >
               <img
                 src={galleryImages[activeGalleryIndex]?.url}
-                alt={wish.recipientName}
-                className="h-[320px] w-full object-cover transition duration-500 group-hover:scale-105"
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl opacity-35"
               />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,23,42,0.08),rgba(2,6,23,0.7))]" />
+              <div className="relative flex h-[320px] w-full items-center justify-center p-4 sm:p-6">
+                <img
+                  src={galleryImages[activeGalleryIndex]?.url}
+                  alt={wish.recipientName}
+                  className="max-h-full max-w-full object-contain transition duration-500 group-hover:scale-[1.02]"
+                />
+              </div>
+
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-4">
+                <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/12 bg-slate-950/65 px-3 py-2 backdrop-blur-xl">
+                  <button
+                    type="button"
+                    onClick={() => setActiveGalleryIndex((current) => (current - 1 + galleryImages.length) % galleryImages.length)}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white transition hover:scale-105 hover:border-cyan-300/35 hover:text-cyan-100 hover:shadow-glow"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <span className="min-w-[56px] text-center text-sm text-white/72">
+                    {activeGalleryIndex + 1} / {galleryImages.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveGalleryIndex((current) => (current + 1) % galleryImages.length)}
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/6 text-white transition hover:scale-105 hover:border-cyan-300/35 hover:text-cyan-100 hover:shadow-glow"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
             </motion.div>
 
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
@@ -254,7 +289,7 @@ export default function WishViewer({
                   <img
                     src={image.url}
                     alt={`${wish.recipientName} memory ${index + 1}`}
-                    className="h-24 w-full object-cover"
+                    className="h-24 w-full object-contain bg-slate-950/60"
                   />
                 </motion.button>
               ))}

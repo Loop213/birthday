@@ -1,4 +1,5 @@
 export const TEMPLATE_IDS = [
+  "birthday",
   "cake-celebration",
   "balloon-sky",
   "romantic-love",
@@ -7,6 +8,7 @@ export const TEMPLATE_IDS = [
 ];
 
 export const TEMPLATE_THEME_MAP = {
+  birthday: "party",
   "cake-celebration": "party",
   "balloon-sky": "funny",
   "romantic-love": "romantic",
@@ -15,6 +17,7 @@ export const TEMPLATE_THEME_MAP = {
 };
 
 export const TEMPLATE_MUSIC_MAP = {
+  birthday: "celebration-dream",
   "cake-celebration": "celebration-dream",
   "balloon-sky": "sky-drift",
   "romantic-love": "moonlight-vows",

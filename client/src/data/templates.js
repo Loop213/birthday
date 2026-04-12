@@ -1,5 +1,18 @@
 export const birthdayTemplates = [
   {
+    id: "birthday",
+    label: "Birthday",
+    shortLabel: "Birthday",
+    description: "Floating letter balloons align into HAPPY BIRTHDAY, then the celebration glows into a cake finale.",
+    interactionHint: "Watch the balloons align, tap balloons to pop them, and enjoy the final cake reveal.",
+    accent: "#7ea6ff",
+    glow: "#ff8fb8",
+    halo: "from-sky-300/35 via-fuchsia-300/20 to-transparent",
+    defaultTheme: "party",
+    defaultMusicPreset: "celebration-dream",
+    features: ["Letter balloons", "Alignment reveal", "Confetti celebration", "Cake finale"]
+  },
+  {
     id: "cake-celebration",
     label: "Cake Celebration Scene",
     shortLabel: "Cake Celebration",
