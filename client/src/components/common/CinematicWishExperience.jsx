@@ -1,10 +1,12 @@
 import {
+  ChevronUp,
   Expand,
   Globe,
   Instagram,
   Linkedin,
   Mail,
   Minimize2,
+  Music4,
   RotateCcw,
   Volume2,
   VolumeX
@@ -300,6 +302,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
   const [letterOpening, setLetterOpening] = useState(false);
   const [celebrationTriggered, setCelebrationTriggered] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [audioExpanded, setAudioExpanded] = useState(false);
 
   useEffect(() => {
     const handleChange = () => {
@@ -376,6 +379,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
     setReplayToken((current) => current + 1);
     setLetterOpening(false);
     setCelebrationTriggered(false);
+    setAudioExpanded(false);
   }
 
   async function toggleFullscreen() {
@@ -397,7 +401,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
 
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(15,23,42,0)_38%,rgba(2,6,23,0.65)_76%,rgba(2,6,23,0.95)_100%)]" />
 
-      <div className="absolute right-4 top-4 z-40 flex flex-wrap gap-3 sm:right-6 sm:top-6">
+      <div className="absolute right-4 top-4 z-40 flex flex-wrap justify-end gap-3 sm:right-6 sm:top-6">
         <button
           type="button"
           onClick={() => setMuted((current) => !current)}
@@ -561,18 +565,18 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
               className="h-[100svh] rounded-none border-0 bg-transparent shadow-none"
             />
 
-            <div className="pointer-events-none absolute inset-x-0 top-24 z-20 flex justify-center px-4">
+            <div className="pointer-events-none absolute inset-x-0 bottom-28 z-20 flex justify-start px-4 sm:px-6">
               <motion.div
                 animate={{ y: [0, -8, 0] }}
                 transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-                className="max-w-3xl rounded-[2rem] border border-white/12 bg-slate-950/38 px-6 py-5 text-center backdrop-blur-xl"
+                className="max-w-xl rounded-[2rem] border border-white/12 bg-slate-950/42 px-5 py-5 text-left backdrop-blur-xl sm:px-6"
               >
                 <p className="text-sm uppercase tracking-[0.4em] text-emerald-100/75">{template.shortLabel}</p>
-                <h3 className="mt-3 text-3xl font-semibold text-white sm:text-5xl">
+                <h3 className="mt-3 text-2xl font-semibold text-white sm:text-4xl">
                   BALL finale for {recipientName}
                 </h3>
-                <p className="mt-3 text-white/68">
-                  Cake, balloons, confetti, and a full-screen cinematic celebration.
+                <p className="mt-3 max-w-lg text-white/68">
+                  Cake, balloons, confetti, and a full-screen cinematic celebration without distractions.
                 </p>
                 {shareUrl ? (
                   <p className="mt-3 text-sm text-cyan-100/80">
@@ -585,20 +589,69 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
         ) : null}
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col items-center gap-3 px-4 pb-4 sm:pb-6">
-        <div className="pointer-events-auto w-full max-w-2xl">
-          <AudioControlBar
-            wish={wish}
-            compact
-            autoPlay
-            initialVolume={0.24}
-            muted={muted}
-            onMutedChange={setMuted}
-            title="BALL Soundtrack"
-            className="border-white/12 bg-slate-950/58 backdrop-blur-2xl"
-          />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6">
+        <div className="flex items-end justify-between gap-4">
+          <div className="pointer-events-auto max-w-2xl">
+            <AnimatePresence initial={false}>
+              {audioExpanded ? (
+                <motion.div
+                  key="audio-expanded"
+                  initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 18, scale: 0.98 }}
+                  transition={{ duration: 0.28, ease: "easeOut" }}
+                  className="w-[min(100vw-2rem,42rem)] sm:w-[38rem]"
+                >
+                  <div className="mb-2 flex justify-start">
+                    <button
+                      type="button"
+                      onClick={() => setAudioExpanded(false)}
+                      className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 text-xs uppercase tracking-[0.22em] text-white/65 backdrop-blur-xl transition hover:border-white/20 hover:text-white"
+                    >
+                      Hide soundtrack
+                    </button>
+                  </div>
+                  <AudioControlBar
+                    wish={wish}
+                    compact
+                    autoPlay
+                    initialVolume={0.24}
+                    muted={muted}
+                    onMutedChange={setMuted}
+                    title="BALL Soundtrack"
+                    className="border-white/12 bg-slate-950/72 backdrop-blur-2xl"
+                  />
+                </motion.div>
+              ) : (
+                <motion.button
+                  key="audio-collapsed"
+                  type="button"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 12 }}
+                  whileHover={{ y: -2 }}
+                  onClick={() => setAudioExpanded(true)}
+                  className="flex items-center gap-3 rounded-full border border-white/12 bg-slate-950/62 px-4 py-3 text-left text-white shadow-glow backdrop-blur-xl"
+                >
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/12 text-cyan-100">
+                    <Music4 className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-xs uppercase tracking-[0.28em] text-cyan-100/70">BALL Soundtrack</span>
+                    <span className="block text-sm text-white/70">
+                      {muted ? "Muted" : "Ambient music playing"}
+                    </span>
+                  </span>
+                  <ChevronUp className="h-4 w-4 text-white/55" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="pointer-events-auto">
+            <FooterBranding />
+          </div>
         </div>
-        <FooterBranding />
       </div>
     </div>
   );
