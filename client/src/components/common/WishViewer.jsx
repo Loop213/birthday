@@ -25,6 +25,7 @@ export default function WishViewer({
   const [typedMessage, setTypedMessage] = useState("");
   const [replayToken, setReplayToken] = useState(0);
   const template = getBirthdayTemplate(wish?.templateId);
+  const isBirthdayTemplate = template.id === "birthday";
   const wishIdentity = wish?._id || wish?.id || wish?.shareSlug || template.id;
   const expiryLabel = wish?.expiresAt
     ? new Intl.DateTimeFormat("en-IN", {
@@ -110,8 +111,8 @@ export default function WishViewer({
 
   return (
     <div className="space-y-6" ref={containerRef}>
-      <div className="glass-panel p-4 sm:p-6">
-        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className={`glass-panel ${isBirthdayTemplate ? "overflow-hidden p-0" : "p-4 sm:p-6"}`}>
+        <div className={`mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between ${isBirthdayTemplate ? "p-5 sm:p-6" : ""}`}>
           <div>
             <span className="badge">{template.shortLabel}</span>
             <h1 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
@@ -139,30 +140,93 @@ export default function WishViewer({
           </div>
         </div>
 
-        <Preview3D wish={wish} mode={mode} replayToken={replayToken} />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1.18fr_0.82fr]">
-        <div className="glass-panel p-6">
-          <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-[1.5rem] border border-fuchsia-300/12 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-100/55">Shayari</p>
-              <blockquote className="mt-4 min-h-[140px] text-lg italic leading-8 text-rose-50/85">
-                {wish?.shayari || "No extra shayari was added, so the template itself carries the emotion."}
-              </blockquote>
+        {isBirthdayTemplate ? (
+          <div className="relative">
+            <div className="px-3 pb-3 sm:px-6 sm:pb-6">
+              <Preview3D
+                wish={wish}
+                mode={mode}
+                replayToken={replayToken}
+                showOverlay={false}
+                className="h-[520px] border-white/8 bg-slate-950/25 shadow-[0_30px_120px_rgba(15,23,42,0.34)]"
+              />
             </div>
 
-            <div className="rounded-[1.5rem] border border-cyan-300/12 bg-white/5 p-5">
-              <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/55">Message</p>
-              <p className="mt-4 min-h-[140px] text-lg leading-8 text-white/80">
-                {typedMessage}
-                {wish?.message ? (
-                  <span className="ml-1 inline-block h-5 w-1 animate-pulse rounded-full bg-cyan-200 align-middle" />
-                ) : null}
-              </p>
+            <div className="px-3 pb-3 sm:px-6 sm:pb-6">
+              <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+                <div className="rounded-[1.85rem] border border-fuchsia-300/10 bg-white/5 p-5 backdrop-blur-xl">
+                  <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-100/55">Shayari</p>
+                  <blockquote className="mt-4 min-h-[128px] text-lg italic leading-8 text-rose-50/85">
+                    {wish?.shayari || "No extra shayari was added, so the balloon story carries the emotion."}
+                  </blockquote>
+                </div>
+
+                <div className="rounded-[1.85rem] border border-cyan-300/10 bg-white/5 p-5 backdrop-blur-xl">
+                  <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/55">Message</p>
+                  <p className="mt-4 min-h-[128px] text-lg leading-8 text-white/80">
+                    {typedMessage}
+                    {wish?.message ? (
+                      <span className="ml-1 inline-block h-5 w-1 animate-pulse rounded-full bg-cyan-200 align-middle" />
+                    ) : null}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <Preview3D wish={wish} mode={mode} replayToken={replayToken} />
+        )}
+      </div>
+
+      <div className={`grid gap-6 ${isBirthdayTemplate ? "lg:grid-cols-[0.9fr_1.1fr]" : "lg:grid-cols-[1.18fr_0.82fr]"}`}>
+        {!isBirthdayTemplate ? (
+          <div className="glass-panel p-6">
+            <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+              <div className="rounded-[1.5rem] border border-fuchsia-300/12 bg-white/5 p-5">
+                <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-100/55">Shayari</p>
+                <blockquote className="mt-4 min-h-[140px] text-lg italic leading-8 text-rose-50/85">
+                  {wish?.shayari || "No extra shayari was added, so the template itself carries the emotion."}
+                </blockquote>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-cyan-300/12 bg-white/5 p-5">
+                <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/55">Message</p>
+                <p className="mt-4 min-h-[140px] text-lg leading-8 text-white/80">
+                  {typedMessage}
+                  {wish?.message ? (
+                    <span className="ml-1 inline-block h-5 w-1 animate-pulse rounded-full bg-cyan-200 align-middle" />
+                  ) : null}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="glass-panel p-6">
+            <span className="badge">Birthday Preview Notes</span>
+            <h2 className="mt-4 text-2xl font-semibold text-white">Balloon alignment story</h2>
+            <p className="mt-3 text-white/60">
+              This template starts with floating letter balloons, forms HAPPY BIRTHDAY, then flows into your story moments.
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-white/45">Photo Style</p>
+                <p className="mt-2 text-lg font-medium text-white">{wish?.photoFrameStyle || "Romantic"}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-white/45">Transition</p>
+                <p className="mt-2 text-lg font-medium text-white">{wish?.photoTransition || "Fade"}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-white/45">Relation</p>
+                <p className="mt-2 text-lg font-medium text-white">{wish.relation}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-white/45">Template</p>
+                <p className="mt-2 text-lg font-medium text-white">{template.shortLabel}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="glass-panel p-6">
           <div className="flex items-center gap-3 text-white/80">

@@ -132,6 +132,29 @@ function ProgressRail({ stage }) {
   );
 }
 
+function BirthdayStageDock({ eyebrow, message, buttonLabel, onClick, align = "center" }) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-4 pb-6 sm:pb-8">
+      <div className="pointer-events-auto w-full max-w-2xl">
+        <div className="overflow-hidden rounded-[2.2rem] border border-white/12 bg-slate-950/46 shadow-[0_20px_90px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
+          <div className="h-px bg-gradient-to-r from-transparent via-cyan-200/60 to-transparent" />
+          <div className={`px-6 py-5 sm:px-8 sm:py-6 ${align === "left" ? "text-left" : "text-center"}`}>
+            <p className="text-[11px] uppercase tracking-[0.34em] text-white/45">{eyebrow}</p>
+            {message ? (
+              <p className="mt-4 text-sm leading-7 text-white/72 sm:text-base">
+                {message}
+              </p>
+            ) : null}
+            <button type="button" onClick={onClick} className="button-primary mt-5">
+              {buttonLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RevealParagraphs({ paragraphs, active, maxCollapsed = 4 }) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -550,7 +573,9 @@ export default function CinematicWishExperience({ wish }) {
       </div>
 
       <div className="absolute left-4 top-20 z-40 hidden sm:block sm:left-6">
-        {stage !== STORY_STAGES.LOADING ? <ProgressRail stage={stage} /> : null}
+        {stage !== STORY_STAGES.LOADING && !(isBirthdayBalloonTemplate && (stage === STORY_STAGES.LETTER || stage === STORY_STAGES.SHAYARI)) ? (
+          <ProgressRail stage={stage} />
+        ) : null}
       </div>
 
       <AnimatePresence mode="wait">
@@ -586,52 +611,59 @@ export default function CinematicWishExperience({ wish }) {
             exit={{ opacity: 0 }}
             className="relative z-10 min-h-screen px-4 py-20 sm:px-6"
           >
-            <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="space-y-6 rounded-[2.5rem] border border-white/12 bg-slate-950/35 p-8 backdrop-blur-2xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/55">Step 1</p>
-                <h2 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
-                  {isBirthdayBalloonTemplate
-                    ? "Balloons pe letters aayenge, phir HAPPY BIRTHDAY khud banega"
-                    : "Pehle ek khat khulega, phir dil ki baat saamne aayegi"}
-                </h2>
-                <p className="text-lg leading-8 text-white/68">
-                  {isBirthdayBalloonTemplate
-                    ? "Balloons ko float karte dekho. Alignment complete hone par next chapter tumhare tap se hi khulega."
-                    : "Envelope par tap karo. Jab tak tum open nahi karoge, story yahin rukkar tumhara wait karegi."}
-                </p>
-
-                {isBirthdayBalloonTemplate ? (
-                  <button type="button" onClick={goToNextStage} className="button-primary">
-                    Continue to Shayari
-                  </button>
-                ) : letterOpened ? (
-                  <button type="button" onClick={goToNextStage} className="button-primary">
-                    Continue to Shayari
-                  </button>
-                ) : (
-                  <button type="button" onClick={startLetterOpening} className="button-secondary">
-                    Open Letter
-                  </button>
-                )}
-              </div>
-
-              {isBirthdayBalloonTemplate ? (
+            {isBirthdayBalloonTemplate ? (
+              <div className="relative mx-auto min-h-[calc(100vh-8rem)] max-w-[88rem] overflow-hidden rounded-[2.6rem] border border-white/8 bg-slate-950/12 shadow-[0_30px_120px_rgba(15,23,42,0.35)]">
                 <Preview3D
                   wish={wish}
                   mode="public"
                   replayToken={replayToken}
                   showOverlay={false}
-                  className="min-h-[420px] border-white/12 bg-slate-950/32 sm:min-h-[560px]"
+                  className="min-h-[calc(100vh-8rem)] rounded-[2.6rem] border-0 bg-transparent shadow-none"
                 />
-              ) : (
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-[#050816]/70 via-[#050816]/18 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#050816]/82 via-[#050816]/30 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 top-6 z-20 flex justify-center px-4">
+                  <div className="rounded-full border border-white/12 bg-slate-950/38 px-4 py-2 backdrop-blur-xl">
+                    <span className="text-[11px] uppercase tracking-[0.34em] text-cyan-100/76">Balloon Story</span>
+                  </div>
+                </div>
+                <BirthdayStageDock
+                  eyebrow="Arrival"
+                  message={wish?.message?.trim() || "Tap when you are ready to continue the birthday story."}
+                  buttonLabel="Continue to Shayari"
+                  onClick={goToNextStage}
+                />
+              </div>
+            ) : (
+              <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="space-y-6 rounded-[2.5rem] border border-white/12 bg-slate-950/35 p-8 backdrop-blur-2xl">
+                  <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/55">Step 1</p>
+                  <h2 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
+                    Pehle ek khat khulega, phir dil ki baat saamne aayegi
+                  </h2>
+                  <p className="text-lg leading-8 text-white/68">
+                    Envelope par tap karo. Jab tak tum open nahi karoge, story yahin rukkar tumhara wait karegi.
+                  </p>
+
+                  {letterOpened ? (
+                    <button type="button" onClick={goToNextStage} className="button-primary">
+                      Continue to Shayari
+                    </button>
+                  ) : (
+                    <button type="button" onClick={startLetterOpening} className="button-secondary">
+                      Open Letter
+                    </button>
+                  )}
+                </div>
+
                 <MagicLetterScene
                   replayToken={replayToken}
                   opening={letterOpening}
                   onOpened={handleLetterOpened}
                   onOpenRequest={startLetterOpening}
                 />
-              )}
-            </div>
+              </div>
+            )}
           </motion.section>
         ) : null}
 
@@ -643,33 +675,60 @@ export default function CinematicWishExperience({ wish }) {
             exit={{ opacity: 0, y: -18 }}
             className="relative z-10 min-h-screen px-4 py-20 sm:px-6"
           >
-            <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1fr_0.95fr]">
-              <div className="rounded-[2.5rem] border border-white/12 bg-slate-950/35 p-8 backdrop-blur-2xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/55">Shayari</p>
-                <h2 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
-                  Har line me thoda sa pyaar, thoda sa intezar
-                </h2>
-                <div className="mt-8">
-                  <RevealParagraphs paragraphs={shayariParagraphs} active />
-                </div>
-                <button type="button" onClick={goToNextStage} className="button-primary mt-8">
-                  Continue to Message
-                </button>
-              </div>
-
-              <motion.div
-                animate={{ y: [0, -8, 0], scale: [1, 1.015, 1] }}
-                transition={{ repeat: Infinity, duration: 5.2, ease: "easeInOut" }}
-              >
+            {isBirthdayBalloonTemplate ? (
+              <div className="relative mx-auto min-h-[calc(100vh-8rem)] max-w-[88rem] overflow-hidden rounded-[2.6rem] border border-white/8 bg-slate-950/12 shadow-[0_30px_120px_rgba(15,23,42,0.35)]">
                 <Preview3D
                   wish={wish}
                   mode="public"
                   replayToken={replayToken}
                   showOverlay={false}
-                  className="min-h-[340px] border-white/12 bg-slate-950/32 sm:min-h-[420px]"
+                  className="min-h-[calc(100vh-8rem)] rounded-[2.6rem] border-0 bg-transparent shadow-none"
                 />
-              </motion.div>
-            </div>
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-[#050816]/70 via-[#050816]/18 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#050816]/88 via-[#050816]/38 to-transparent" />
+                <BirthdayStageDock
+                  eyebrow="Shayari"
+                  message=""
+                  buttonLabel="Continue to Message"
+                  onClick={goToNextStage}
+                />
+                <div className="pointer-events-none absolute inset-x-0 bottom-24 flex justify-center px-4">
+                  <div className="pointer-events-auto w-full max-w-2xl rounded-[2rem] border border-white/12 bg-slate-950/44 px-6 py-5 backdrop-blur-2xl sm:px-8">
+                    <div className="max-h-[180px] overflow-y-auto text-center sm:max-h-[220px]">
+                      <RevealParagraphs paragraphs={shayariParagraphs} active />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl items-center gap-8 lg:grid-cols-[1fr_0.95fr]">
+                <div className="rounded-[2.5rem] border border-white/12 bg-slate-950/35 p-8 backdrop-blur-2xl">
+                  <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/55">Shayari</p>
+                  <h2 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">
+                    Har line me thoda sa pyaar, thoda sa intezar
+                  </h2>
+                  <div className="mt-8">
+                    <RevealParagraphs paragraphs={shayariParagraphs} active />
+                  </div>
+                  <button type="button" onClick={goToNextStage} className="button-primary mt-8">
+                    Continue to Message
+                  </button>
+                </div>
+
+                <motion.div
+                  animate={{ y: [0, -8, 0], scale: [1, 1.015, 1] }}
+                  transition={{ repeat: Infinity, duration: 5.2, ease: "easeInOut" }}
+                >
+                  <Preview3D
+                    wish={wish}
+                    mode="public"
+                    replayToken={replayToken}
+                    showOverlay={false}
+                    className="min-h-[340px] border-white/12 bg-slate-950/32 sm:min-h-[420px]"
+                  />
+                </motion.div>
+              </div>
+            )}
           </motion.section>
         ) : null}
 
