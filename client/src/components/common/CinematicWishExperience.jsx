@@ -200,6 +200,65 @@ function TypewriterLines({ lines, active, duration = STAGE_TIMINGS.shayari }) {
   );
 }
 
+function FinaleMessage({ title, caption, active }) {
+  const [displayTitle, setDisplayTitle] = useState("");
+  const [displayCaption, setDisplayCaption] = useState("");
+
+  useEffect(() => {
+    if (!active) {
+      setDisplayTitle("");
+      setDisplayCaption("");
+      return undefined;
+    }
+
+    let titleIndex = 0;
+    let captionIndex = 0;
+    let captionTimer;
+
+    const titleTimer = window.setInterval(() => {
+      titleIndex += 1;
+      setDisplayTitle(title.slice(0, titleIndex));
+
+      if (titleIndex >= title.length) {
+        window.clearInterval(titleTimer);
+
+        captionTimer = window.setInterval(() => {
+          captionIndex += 1;
+          setDisplayCaption(caption.slice(0, captionIndex));
+
+          if (captionIndex >= caption.length) {
+            window.clearInterval(captionTimer);
+          }
+        }, 24);
+      }
+    }, 36);
+
+    return () => {
+      window.clearInterval(titleTimer);
+      if (captionTimer) {
+        window.clearInterval(captionTimer);
+      }
+    };
+  }, [active, caption, title]);
+
+  return (
+    <motion.div
+      animate={{ y: [0, -6, 0], opacity: [0.92, 1, 0.92] }}
+      transition={{ repeat: Infinity, duration: 4.8, ease: "easeInOut" }}
+    >
+      <h3 className="mt-3 text-2xl font-semibold leading-tight text-white drop-shadow-[0_0_26px_rgba(244,114,182,0.24)] sm:text-4xl">
+        {displayTitle}
+        {displayTitle.length < title.length ? (
+          <span className="ml-2 inline-block h-6 w-1 animate-pulse rounded-full bg-cyan-200 align-middle" />
+        ) : null}
+      </h3>
+      <p className="mt-4 max-w-lg text-base leading-7 text-white/72 sm:text-lg">
+        {displayCaption}
+      </p>
+    </motion.div>
+  );
+}
+
 function FloatingPhotos({ images, recipientName, active }) {
   const placements = useMemo(
     () =>
@@ -304,6 +363,8 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
   const relation = wish?.relation || "family";
   const highlightedMessage = `🎂 Happy Birthday ${recipientName} 🎂`;
   const subMessage = wish?.message?.trim() || "Tu sirf dost nahi, family hai ❤️";
+  const finaleMessage = wish?.message?.trim() || `${recipientName}, aaj ka din sirf tumhari smile ke naam.`;
+  const finaleCaption = wish?.shayari?.trim() || `Tum sirf ${relation} nahi ho, meri duniya ka sabse pyara hissa ho.`;
   const [stage, setStage] = useState(STORY_STAGES.LETTER);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [replayToken, setReplayToken] = useState(0);
@@ -609,18 +670,13 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
 
             <div className="pointer-events-none absolute inset-x-0 bottom-28 z-20 flex justify-start px-4 sm:px-6">
               <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.75, ease: "easeOut" }}
                 className="max-w-xl rounded-[2rem] border border-white/12 bg-slate-950/42 px-5 py-5 text-left backdrop-blur-xl sm:px-6"
               >
                 <p className="text-[11px] uppercase tracking-[0.32em] text-white/45">Scene {activeStageLabel}</p>
-                <p className="text-sm uppercase tracking-[0.4em] text-emerald-100/75">{template.shortLabel}</p>
-                <h3 className="mt-3 text-2xl font-semibold text-white sm:text-4xl">
-                  BALL finale for {recipientName}
-                </h3>
-                <p className="mt-3 max-w-lg text-white/68">
-                  Cake, balloons, confetti, and a full-screen cinematic celebration without distractions.
-                </p>
+                <FinaleMessage title={finaleMessage} caption={finaleCaption} active={stage === STORY_STAGES.CELEBRATION} />
                 {shareUrl ? (
                   <p className="mt-3 text-sm text-cyan-100/80">
                     Shareable surprise ready: {shareUrl}
@@ -635,7 +691,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="pointer-events-auto max-w-2xl">
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} mode="wait">
               {audioExpanded ? (
                 <motion.div
                   key="audio-expanded"
@@ -666,27 +722,42 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
                   />
                 </motion.div>
               ) : (
-                <motion.button
-                  key="audio-collapsed"
-                  type="button"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 12 }}
-                  whileHover={{ y: -2 }}
-                  onClick={() => setAudioExpanded(true)}
-                  className="flex items-center gap-3 rounded-[1.35rem] border border-white/12 bg-slate-950/62 px-4 py-3 text-left text-white shadow-glow backdrop-blur-xl"
-                >
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/12 text-cyan-100">
-                    <Music4 className="h-4 w-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-xs uppercase tracking-[0.28em] text-cyan-100/70">BALL Soundtrack</span>
-                    <span className="block truncate text-sm text-white/70">
-                      {muted ? "Muted" : "Ambient music playing"} • Tap to expand
+                <div className="relative">
+                  <div className="absolute left-0 top-0 h-0 w-0 overflow-hidden opacity-0">
+                    <AudioControlBar
+                      wish={wish}
+                      compact
+                      autoPlay
+                      initialVolume={0.24}
+                      muted={muted}
+                      onMutedChange={setMuted}
+                      title="BALL Soundtrack"
+                      className="border-white/12 bg-slate-950/72 backdrop-blur-2xl"
+                    />
+                  </div>
+
+                  <motion.button
+                    key="audio-collapsed"
+                    type="button"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 12 }}
+                    whileHover={{ y: -2 }}
+                    onClick={() => setAudioExpanded(true)}
+                    className="flex items-center gap-3 rounded-[1.35rem] border border-white/12 bg-slate-950/62 px-4 py-3 text-left text-white shadow-glow backdrop-blur-xl"
+                  >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/12 text-cyan-100">
+                      <Music4 className="h-4 w-4" />
                     </span>
-                  </span>
-                  <ChevronUp className="h-4 w-4 text-white/55" />
-                </motion.button>
+                    <span className="min-w-0">
+                      <span className="block text-xs uppercase tracking-[0.28em] text-cyan-100/70">BALL Soundtrack</span>
+                      <span className="block truncate text-sm text-white/70">
+                        {muted ? "Muted" : "Ambient music playing"} • Tap to expand
+                      </span>
+                    </span>
+                    <ChevronUp className="h-4 w-4 text-white/55" />
+                  </motion.button>
+                </div>
               )}
             </AnimatePresence>
           </div>
