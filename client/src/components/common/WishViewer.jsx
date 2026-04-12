@@ -2,19 +2,15 @@ import {
   Expand,
   MessageCircleMore,
   Minimize2,
-  Music4,
-  Pause,
-  Play,
   RotateCcw,
-  Volume2,
-  VolumeX
+  Music4
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Preview3D from "../three/Preview3D.jsx";
 import { getBirthdayTemplate } from "../../data/templates.js";
-import { musicPresets } from "../../data/options.js";
 import { defaultGalleryImages } from "../../data/defaultGallery.js";
+import AudioControlBar from "./AudioControlBar.jsx";
 
 export default function WishViewer({
   wish,
@@ -23,20 +19,10 @@ export default function WishViewer({
   allowShare = false
 }) {
   const containerRef = useRef(null);
-  const audioRef = useRef(null);
-  const [muted, setMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [typedMessage, setTypedMessage] = useState("");
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [volume, setVolume] = useState(0.72);
   const [replayToken, setReplayToken] = useState(0);
   const template = getBirthdayTemplate(wish?.templateId);
-  const presetTrack = musicPresets.find((preset) => preset.value === wish?.music?.preset);
-  const defaultTrack = musicPresets.find((preset) => preset.isDefault) || musicPresets[0];
-  const audioSource =
-    wish?.music?.type === "upload"
-      ? wish?.music?.url
-      : presetTrack?.url || defaultTrack?.url;
   const wishIdentity = wish?._id || wish?.id || wish?.shareSlug || template.id;
   const expiryLabel = wish?.expiresAt
     ? new Intl.DateTimeFormat("en-IN", {
@@ -74,27 +60,6 @@ export default function WishViewer({
     document.addEventListener("fullscreenchange", handleChange);
     return () => document.removeEventListener("fullscreenchange", handleChange);
   }, []);
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      return;
-    }
-
-    audioRef.current.muted = muted;
-    audioRef.current.volume = volume;
-
-    if (isPlaying) {
-      audioRef.current.play().catch(() => undefined);
-      return;
-    }
-
-    audioRef.current.pause();
-  }, [muted, audioSource, isPlaying, volume]);
-
-  useEffect(() => {
-    setIsPlaying(true);
-    setVolume(0.72);
-  }, [wishIdentity]);
 
   useEffect(() => {
     setActiveGalleryIndex(0);
@@ -136,20 +101,9 @@ export default function WishViewer({
     window.open(`https://wa.me/?text=${text}`, "_blank");
   }
 
-  function togglePlayback() {
-    setIsPlaying((current) => !current);
-  }
-
   function replayExperience() {
     setTypedMessage("");
     setReplayToken((current) => current + 1);
-
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      if (isPlaying) {
-        audioRef.current.play().catch(() => undefined);
-      }
-    }
   }
 
   return (
@@ -166,10 +120,6 @@ export default function WishViewer({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={() => setMuted((current) => !current)} className="button-secondary">
-              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              {muted ? "Unmute" : "Mute"}
-            </button>
             <button type="button" onClick={toggleFullscreen} className="button-secondary">
               {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Expand className="h-4 w-4" />}
               {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
@@ -210,44 +160,7 @@ export default function WishViewer({
             <Music4 className="h-4 w-4 text-cyan-200" />
             <span>Background soundtrack</span>
           </div>
-          {audioSource ? (
-            <>
-              <audio ref={audioRef} autoPlay loop className="hidden">
-                <source src={audioSource} />
-              </audio>
-              <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
-                <p className="text-sm text-white/60">
-                  {wish?.music?.type === "upload"
-                    ? "Custom uploaded track"
-                    : presetTrack?.label || defaultTrack?.label || "Default birthday instrumental"}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button type="button" onClick={togglePlayback} className="button-secondary">
-                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                    {isPlaying ? "Pause" : "Play"}
-                  </button>
-                  <button type="button" onClick={() => setMuted((current) => !current)} className="button-secondary">
-                    {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                    {muted ? "Unmute" : "Mute"}
-                  </button>
-                </div>
-                <label className="mt-4 block space-y-2">
-                  <span className="text-xs uppercase tracking-[0.22em] text-white/45">Volume</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={volume}
-                    onChange={(event) => setVolume(Number(event.target.value))}
-                    className="w-full accent-cyan-300"
-                  />
-                </label>
-              </div>
-            </>
-          ) : (
-            <p className="mt-4 text-sm text-white/55">No music track attached for this wish.</p>
-          )}
+          <AudioControlBar wish={wish} compact className="mt-4" />
 
           {wish?.voiceMessage?.url ? (
             <div className="mt-6">

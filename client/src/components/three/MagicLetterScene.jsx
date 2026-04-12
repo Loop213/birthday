@@ -212,9 +212,17 @@ function LetterStage({ replayToken = 0, opening = false, onOpened, onOpenRequest
   );
 }
 
-export default function MagicLetterScene({ replayToken = 0, opening = false, onOpened, onOpenRequest }) {
+export default function MagicLetterScene({
+  replayToken = 0,
+  opening = false,
+  onOpened,
+  onOpenRequest,
+  className = ""
+}) {
   return (
-    <div className="relative h-[420px] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/60 shadow-glow sm:h-[560px]">
+    <div
+      className={`relative h-[420px] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/60 shadow-glow sm:h-[560px] ${className}`}
+    >
       <Canvas camera={{ position: [0, 0.5, 8.3], fov: 34 }} dpr={[1, 1.6]} shadows>
         <Suspense fallback={null}>
           <LetterStage
