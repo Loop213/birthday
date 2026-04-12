@@ -35,6 +35,14 @@ const STAGE_TIMINGS = {
   photos: 9000
 };
 
+const STAGE_SEQUENCE = [
+  STORY_STAGES.LETTER,
+  STORY_STAGES.SHAYARI,
+  STORY_STAGES.MESSAGE,
+  STORY_STAGES.PHOTOS,
+  STORY_STAGES.CELEBRATION
+];
+
 function FloatingBackdrop() {
   const particles = useMemo(
     () =>
@@ -303,6 +311,14 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
   const [celebrationTriggered, setCelebrationTriggered] = useState(false);
   const [muted, setMuted] = useState(false);
   const [audioExpanded, setAudioExpanded] = useState(false);
+  const activeStageIndex = STAGE_SEQUENCE.indexOf(stage);
+  const activeStageLabel = {
+    [STORY_STAGES.LETTER]: "Arrival",
+    [STORY_STAGES.SHAYARI]: "Shayari",
+    [STORY_STAGES.MESSAGE]: "Message",
+    [STORY_STAGES.PHOTOS]: "Memories",
+    [STORY_STAGES.CELEBRATION]: "Finale"
+  }[stage];
 
   useEffect(() => {
     const handleChange = () => {
@@ -423,6 +439,32 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
       <div className="pointer-events-none absolute left-4 top-4 z-40 sm:left-6 sm:top-6">
         <div className="rounded-full border border-cyan-300/18 bg-slate-950/50 px-4 py-2 backdrop-blur-xl">
           <span className="text-xs uppercase tracking-[0.34em] text-cyan-100/80">BALL Experience</span>
+        </div>
+      </div>
+
+      <div className="pointer-events-none absolute left-4 top-20 z-40 hidden sm:block sm:left-6">
+        <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/35 px-4 py-4 backdrop-blur-xl">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-white/45">Story Flow</p>
+          <div className="mt-4 flex flex-col gap-2">
+            {STAGE_SEQUENCE.map((stageName, index) => (
+              <div key={stageName} className="flex items-center gap-3">
+                <span
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    index <= activeStageIndex ? "bg-cyan-200 shadow-[0_0_14px_rgba(103,232,249,0.8)]" : "bg-white/18"
+                  }`}
+                />
+                <span className={`text-sm ${index === activeStageIndex ? "text-white" : "text-white/45"}`}>
+                  {{
+                    [STORY_STAGES.LETTER]: "Arrival",
+                    [STORY_STAGES.SHAYARI]: "Shayari",
+                    [STORY_STAGES.MESSAGE]: "Message",
+                    [STORY_STAGES.PHOTOS]: "Memories",
+                    [STORY_STAGES.CELEBRATION]: "Finale"
+                  }[stageName]}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -571,6 +613,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
                 transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
                 className="max-w-xl rounded-[2rem] border border-white/12 bg-slate-950/42 px-5 py-5 text-left backdrop-blur-xl sm:px-6"
               >
+                <p className="text-[11px] uppercase tracking-[0.32em] text-white/45">Scene {activeStageLabel}</p>
                 <p className="text-sm uppercase tracking-[0.4em] text-emerald-100/75">{template.shortLabel}</p>
                 <h3 className="mt-3 text-2xl font-semibold text-white sm:text-4xl">
                   BALL finale for {recipientName}
@@ -590,7 +633,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
       </AnimatePresence>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6">
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="pointer-events-auto max-w-2xl">
             <AnimatePresence initial={false}>
               {audioExpanded ? (
@@ -631,15 +674,15 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
                   exit={{ opacity: 0, y: 12 }}
                   whileHover={{ y: -2 }}
                   onClick={() => setAudioExpanded(true)}
-                  className="flex items-center gap-3 rounded-full border border-white/12 bg-slate-950/62 px-4 py-3 text-left text-white shadow-glow backdrop-blur-xl"
+                  className="flex items-center gap-3 rounded-[1.35rem] border border-white/12 bg-slate-950/62 px-4 py-3 text-left text-white shadow-glow backdrop-blur-xl"
                 >
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/12 text-cyan-100">
                     <Music4 className="h-4 w-4" />
                   </span>
-                  <span>
+                  <span className="min-w-0">
                     <span className="block text-xs uppercase tracking-[0.28em] text-cyan-100/70">BALL Soundtrack</span>
-                    <span className="block text-sm text-white/70">
-                      {muted ? "Muted" : "Ambient music playing"}
+                    <span className="block truncate text-sm text-white/70">
+                      {muted ? "Muted" : "Ambient music playing"} • Tap to expand
                     </span>
                   </span>
                   <ChevronUp className="h-4 w-4 text-white/55" />
@@ -648,7 +691,7 @@ export default function CinematicWishExperience({ wish, shareUrl = "" }) {
             </AnimatePresence>
           </div>
 
-          <div className="pointer-events-auto">
+          <div className="pointer-events-auto self-start sm:self-auto">
             <FooterBranding />
           </div>
         </div>
